@@ -3,8 +3,8 @@
 mkdir -p cover
 echo 'mode: count' > cover/coverage.report
 
-PKG_LIST=("memorydatabase")
-for package in "${PKG_LIST[@]}"; do
+PKG_LIST=$(go list ./... | grep -v /vendor/ | grep 'a-castellano')
+for package in ${PKG_LIST}; do
     go test --tags=integration_tests -covermode=count -coverprofile "cover/${package##*/}.cov" "$package" ;
 done
 tail -q -n +2 cover/*.cov >> cover/coverage.report
