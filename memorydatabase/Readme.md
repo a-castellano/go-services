@@ -82,3 +82,11 @@ func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string
 ```
 
 Reads string value in required key.
+
+## Integration and coverage tests
+
+Tests expect a Redis server without auth protection running, you can set Redis IP using env variables:
+```bash
+REDIS_IP="127.0.0.1" make test_integration
+REDIS_IP="127.0.0.1" make coverage
+```
