@@ -91,8 +91,8 @@ messagebroker_integration_tests:
     - master
     - /^.*messagebroker.*$/
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_messagebroker_server:202407020557
-      alias: messagebroker
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202407020557
+      alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
     - export GOPATH="$(pwd)/go"
@@ -130,10 +130,10 @@ coverage:
     - develop
     - master
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_messagebroker_server:202407020557
-      alias: rabbitmq
     - name: registry.windmaker.net:5005/a-castellano/limani/base_memorydatabase_server:202407020557
       alias: redis
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202407020557
+      alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
     - export GOPATH="$(pwd)/go"
