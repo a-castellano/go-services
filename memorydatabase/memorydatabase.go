@@ -12,19 +12,19 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 )
 
-// Client interface iperates against memory database instance
+// Client interface operates against memory database instance
 type Client interface {
 	WriteString(context.Context, string, string, int) error
 	ReadString(context.Context, string) (string, error)
 	isClientInitiated() bool
 }
 
-// MemoryDatabase string uses Client in order to operate against database instance
+// MemoryDatabase uses Client in order to operate against database instance
 type MemoryDatabase struct {
 	client Client
 }
 
-// RedisClient isthe real Redis client, it has Client methods
+// RedisClient is the real Redis client, it has Client methods
 type RedisClient struct {
 	config          *redisconfig.Config
 	client          *goredis.Client

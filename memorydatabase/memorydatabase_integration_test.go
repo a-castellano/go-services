@@ -30,7 +30,7 @@ func TestRedisClientInvalidPort(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr == nil {
-				t.Errorf("Redis required port is notvalid, Initiate shold fail")
+				t.Errorf("Redis required port is notvalid, Initiate should fail")
 			}
 		}
 	}
@@ -56,7 +56,7 @@ func TestRedisClientInvalidHost(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr == nil {
-				t.Errorf("Redis required host is notvalid, Initiate shold fail")
+				t.Errorf("Redis required host is notvalid, Initiate should fail")
 			}
 		}
 	}
@@ -82,7 +82,7 @@ func TestRedisClientInitiate(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr != nil {
-				t.Errorf("Initiate shold notfail, Error was %s", initiateErr.Error())
+				t.Errorf("Initiate should notfail, Error was %s", initiateErr.Error())
 			} else {
 				if redisClient.isClientInitiated() != true {
 					t.Error("After successful init, redisClient.isClientInitiated() should be true.")
@@ -113,7 +113,7 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr != nil {
-				t.Errorf("Initiate shold notfail, Error was %s", initiateErr.Error())
+				t.Errorf("Initiate should notfail, Error was %s", initiateErr.Error())
 			} else {
 				if redisClient.isClientInitiated() != true {
 					t.Error("After successful init, redisClient.isClientInitiated() should be true.")
