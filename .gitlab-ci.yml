@@ -181,7 +181,7 @@ scan:
     - master
   image: daedalusproject/base_sonar_scanner
   before_script:
-    - rm coverage.html
+    - rm -rf coverage.html
   script:
     - sonar-scanner -Dsonar.projectKey=go-services -Dsonar.sources=. -Dsonar.host.url=https://sonarqube.windmaker.net -Dsonar.login=${SONAR_LOGIN} -Dsonar.exclusions="*/*_test.go" -Dsonar.go.coverage.reportPaths="cover/coverage.report"
   dependencies:
