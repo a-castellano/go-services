@@ -17,7 +17,7 @@ type Client interface {
 }
 ```
 
-[Redis]((https://git.windmaker.net/a-castellano/go-types/-/tree/master/redis)) type from [go-types](https://git.windmaker.net/a-castellano/go-types/) can be used as Client.
+[Redis](https://git.windmaker.net/a-castellano/go-types/-/tree/master/redis) type from [go-types](https://git.windmaker.net/a-castellano/go-types/) can be used as Client.
 
 ```go
 package main
@@ -27,6 +27,7 @@ import (
 	redisconfig "github.com/a-castellano/go-types/redis"
 	"os"
 )
+
 func main() {
 	redisIP := os.Getenv("REDIS_IP")
 	config, _ := redisconfig.NewConfig()
@@ -60,7 +61,7 @@ Otherwise, memoryDatabase functions will fail and won't perform any action.
 
 ## Available Functions
 
-The following functions are avaible for iteracting with MemoryDatabase
+The following functions are avaible for interacting with MemoryDatabase
 
 ### Initiate
 ```go

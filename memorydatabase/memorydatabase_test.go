@@ -173,10 +173,10 @@ func TestReadStringWithMockSetValue(t *testing.T) {
 	value, err := memoryDatabase.ReadString(ctx, "anykey")
 
 	if err != nil {
-		t.Errorf("memoryDatabase.ReadString with mocked value shold not fail.")
+		t.Errorf("memoryDatabase.ReadString with mocked value should not fail.")
 	} else {
 		if value != "anyvalue" {
-			t.Errorf("memoryDatabase.ReadString with mocked value shold return \"anyvalue\", it has returned \"%s\"", value)
+			t.Errorf("memoryDatabase.ReadString with mocked value should return \"anyvalue\", it has returned \"%s\"", value)
 		}
 	}
 }
@@ -199,7 +199,7 @@ func TestReadStringWithMockNilValue(t *testing.T) {
 		t.Errorf("memoryDatabase.ReadString with mocked inexistent key should fail.")
 	} else {
 		if err.Error() != "redis: nil" {
-			t.Errorf("memoryDatabase.ReadString with mocked inexistent key shold return error \"redis: nil\", it has returned \"%s\"", err.Error())
+			t.Errorf("memoryDatabase.ReadString with mocked inexistent key should return error \"redis: nil\", it has returned \"%s\"", err.Error())
 		}
 	}
 }
