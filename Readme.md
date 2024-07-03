@@ -9,4 +9,5 @@ The aim is this repo is save time and repeated code unifying them in one only so
 # Available Services
 
 * [MemoryDatabase](/memorydatabase): MemoryDatabase service that can use [redis](https://git.windmaker.net/a-castellano/go-types/-/tree/master/redis) type from go-types library.
+* [MessageBroker](/messagebroker): MessageBroker service that can use [rabbitmq](https://git.windmaker.net/a-castellano/go-types/-/tree/master/rabbitmq) type from go-types library.
 

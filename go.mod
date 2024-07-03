@@ -4,6 +4,7 @@ go 1.22.4
 
 require (
 	github.com/a-castellano/go-types v0.0.1
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.5.3
 )
 
