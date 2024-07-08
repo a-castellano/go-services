@@ -127,20 +127,26 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 				t.Errorf("WriteString with redisClient initiated should not fail")
 			}
 			// Test ReadString withinexistent key
-			_, readError := memoryDatabase.ReadString(ctx, "inexistentkey")
-			if readError == nil {
-				t.Error("ReadString from initiated redisClient should fail with inexistent key.")
+			_, notFound, readError := memoryDatabase.ReadString(ctx, "inexistentkey")
+			if readError != nil {
+				t.Error("ReadString from initiated redisClient should not fail with inexistent key.")
+			} else {
+				if notFound == true {
+					t.Error("ReadString from initiated redisClient should shold retrun found value as false.")
+				}
 			}
 			// Test ReadString with key "anykey"
 			// Test ReadString withinexistent key
-			readedValue, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
+			readedValue, nowFound, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
 			if readExistentKeyError != nil {
 				t.Errorf("ReadString from initiated redisClient shouldn't fail reading 'anykey'.")
 			}
 			if readedValue != "anyvalue" {
 				t.Errorf("ReadString from initiated redisClient should return 'anyvalue' but '%s' was returned", readedValue)
 			}
-
+			if nowFound == false {
+				t.Errorf("ReadString from initiated redisClient found value should be true.")
+			}
 		}
 	}
 }

@@ -45,7 +45,7 @@ func main() {
 		writeError := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 0)
 
 		// Read some value
-		readedValue, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey"
+		readedValue, valueFound, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
 	}
 }
 ```
@@ -79,10 +79,10 @@ Writes string value in required key, ttl of that key must be set, use 0 value fo
 
 ### ReadString
 ```go
-func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, error)
+func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, bool, error)
 ```
 
-Reads string value in required key.
+Reads string value in required key. If value is not found, bool returned will be false.
 
 ## Integration and coverage tests
 
