@@ -15,7 +15,7 @@ import (
 // Client interface operates against memory database instance
 type Client interface {
 	WriteString(context.Context, string, string, int) error
-	ReadString(context.Context, string) (string, error)
+	ReadString(context.Context, string) (string, bool, error)
 	isClientInitiated() bool
 }
 
@@ -90,12 +90,18 @@ func (client *RedisClient) WriteString(ctx context.Context, key string, value st
 }
 
 // ReadString uses RedisClient for reading a string as value of required key in Redis
-func (client *RedisClient) ReadString(ctx context.Context, key string) (string, error) {
+func (client *RedisClient) ReadString(ctx context.Context, key string) (string, bool, error) {
+	var found bool = true
 	readedValue, err := client.client.Get(ctx, key).Result()
 	if err != nil {
-		return "", err
+		found = false
+		if err == goredis.Nil {
+			return "", found, nil
+		} else {
+			return "", found, err
+		}
 	}
-	return readedValue, nil
+	return readedValue, found, nil
 }
 
 // WriteString writes string in MemoryDatabase
@@ -103,15 +109,15 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 	if memorydatabase.client.isClientInitiated() {
 		return memorydatabase.client.WriteString(ctx, key, value, ttl)
 	} else {
-		return errors.New("Client is not initiated, cannot perform WriteString operation.")
+		return errors.New("client is not initiated, cannot perform WriteString operation")
 	}
 }
 
 // ReadString writes string in MemoryDatabase
-func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, error) {
+func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, bool, error) {
 	if memorydatabase.client.isClientInitiated() {
 		return memorydatabase.client.ReadString(ctx, key)
 	} else {
-		return "", errors.New("Client is not initiated, cannot perform ReadString operation.")
+		return "", false, errors.New("client is not initiated, cannot perform ReadString operation")
 	}
 }
