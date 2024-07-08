@@ -102,9 +102,19 @@ func (mock *RedisClientMock) WriteString(ctx context.Context, key string, value 
 	return mock.client.Set(ctx, key, value, time.Duration(ttl)*time.Second).Err()
 }
 
-func (mock *RedisClientMock) ReadString(ctx context.Context, key string) (string, error) {
+func (mock *RedisClientMock) ReadString(ctx context.Context, key string) (string, bool, error) {
+	var found bool = true
 	value, getError := mock.client.Get(ctx, key).Result()
-	return value, getError
+
+	if getError != nil {
+		found = false
+		if getError == goredis.Nil {
+			return value, found, nil
+		} else {
+			return value, found, getError
+		}
+	}
+	return value, found, nil
 }
 
 func TestRedisClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) {
@@ -128,8 +138,8 @@ func TestRedisClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 			if err == nil {
 				t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
-				if err.Error() != "Client is not initiated, cannot perform WriteString operation." {
-					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"Client is not initiated, cannot perform WriteString operation.\", it has returned \"%s\"", err.Error())
+				if err.Error() != "client is not initiated, cannot perform WriteString operation" {
+					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
 		}
@@ -170,13 +180,16 @@ func TestReadStringWithMockSetValue(t *testing.T) {
 	redisClientMock := RedisClientMock{client: dbMock}
 	memoryDatabase := MemoryDatabase{client: &redisClientMock}
 
-	value, err := memoryDatabase.ReadString(ctx, "anykey")
+	value, found, err := memoryDatabase.ReadString(ctx, "anykey")
 
 	if err != nil {
 		t.Errorf("memoryDatabase.ReadString with mocked value should not fail.")
 	} else {
 		if value != "anyvalue" {
 			t.Errorf("memoryDatabase.ReadString with mocked value should return \"anyvalue\", it has returned \"%s\"", value)
+		}
+		if found == false {
+			t.Errorf("memoryDatabase.ReadString with mocked value should fond falue")
 		}
 	}
 }
@@ -193,13 +206,13 @@ func TestReadStringWithMockNilValue(t *testing.T) {
 	redisClientMock := RedisClientMock{client: dbMock}
 	memoryDatabase := MemoryDatabase{client: &redisClientMock}
 
-	_, err := memoryDatabase.ReadString(ctx, "anykey")
+	_, found, err := memoryDatabase.ReadString(ctx, "anykey")
 
-	if err == nil {
-		t.Errorf("memoryDatabase.ReadString with mocked inexistent key should fail.")
+	if err != nil {
+		t.Errorf("memoryDatabase.ReadString with mocked inexistent key shouldn't fail.")
 	} else {
-		if err.Error() != "redis: nil" {
-			t.Errorf("memoryDatabase.ReadString with mocked inexistent key should return error \"redis: nil\", it has returned \"%s\"", err.Error())
+		if found == true {
+			t.Errorf("memoryDatabase.ReadString with mocked inexistent key should not find key")
 		}
 	}
 }
@@ -221,12 +234,12 @@ func TestRedisClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 			// Initiate MemoryDatabase instance
 			ctx := context.Background()
 			memoryDatabase := MemoryDatabase{client: &redisClient}
-			_, err := memoryDatabase.ReadString(ctx, "anykey")
+			_, _, err := memoryDatabase.ReadString(ctx, "anykey")
 			if err == nil {
 				t.Errorf("memoryDatabase.ReadString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
-				if err.Error() != "Client is not initiated, cannot perform ReadString operation." {
-					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"Client is not initiated, cannot perform ReadString operation.\", it has returned \"%s\"", err.Error())
+				if err.Error() != "client is not initiated, cannot perform ReadString operation" {
+					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"client is not initiated, cannot perform ReadString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
 		}
