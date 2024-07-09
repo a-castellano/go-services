@@ -94,7 +94,7 @@ type RedisClientMock struct {
 	client *goredis.Client
 }
 
-func (mock *RedisClientMock) isClientInitiated() bool {
+func (mock *RedisClientMock) IsClientInitiated() bool {
 	return true
 }
 
@@ -117,7 +117,7 @@ func (mock *RedisClientMock) ReadString(ctx context.Context, key string) (string
 	return value, found, nil
 }
 
-func TestRedisClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) {
+func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) {
 
 	setUp()
 	defer teardown()
@@ -128,7 +128,7 @@ func TestRedisClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 		t.Errorf("NewConfig method without any env varible suited shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
-		if ok := redisClient.isClientInitiated(); ok {
+		if ok := redisClient.IsClientInitiated(); ok {
 			t.Errorf("RedisClient should not be initiated after being created")
 		} else {
 			// Initiate MemoryDatabase instance
@@ -217,7 +217,7 @@ func TestReadStringWithMockNilValue(t *testing.T) {
 	}
 }
 
-func TestRedisClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
+func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 
 	setUp()
 	defer teardown()
@@ -228,7 +228,7 @@ func TestRedisClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 		t.Errorf("NewConfig method without any env varible suited shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
-		if ok := redisClient.isClientInitiated(); ok {
+		if ok := redisClient.IsClientInitiated(); ok {
 			t.Errorf("RedisClient should not be initiated after being created")
 		} else {
 			// Initiate MemoryDatabase instance

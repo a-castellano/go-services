@@ -23,7 +23,7 @@ func TestRedisClientInvalidPort(t *testing.T) {
 		t.Errorf("NewConfig method with valid host and port shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
-		if ok := redisClient.isClientInitiated(); ok {
+		if ok := redisClient.IsClientInitiated(); ok {
 			t.Errorf("RedisClient should not be initiated after being created")
 		} else {
 			// Initiate RedisClient
@@ -49,7 +49,7 @@ func TestRedisClientInvalidHost(t *testing.T) {
 		t.Errorf("NewConfig method with valid host and port shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
-		if ok := redisClient.isClientInitiated(); ok {
+		if ok := redisClient.IsClientInitiated(); ok {
 			t.Errorf("RedisClient should not be initiated after being created")
 		} else {
 			// Initiate RedisClient
@@ -75,7 +75,7 @@ func TestRedisClientInitiate(t *testing.T) {
 		t.Errorf("NewConfig method with valid host env variable shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
-		if ok := redisClient.isClientInitiated(); ok {
+		if ok := redisClient.IsClientInitiated(); ok {
 			t.Errorf("RedisClient should not be initiated after being created")
 		} else {
 			// Initiate RedisClient
@@ -84,8 +84,8 @@ func TestRedisClientInitiate(t *testing.T) {
 			if initiateErr != nil {
 				t.Errorf("Initiate should notfail, Error was %s", initiateErr.Error())
 			} else {
-				if redisClient.isClientInitiated() != true {
-					t.Error("After successful init, redisClient.isClientInitiated() should be true.")
+				if redisClient.IsClientInitiated() != true {
+					t.Error("After successful init, redisClient.IsClientInitiated() should be true.")
 				}
 			}
 		}
@@ -106,7 +106,7 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 		t.Errorf("NewConfig method with valid host env variable shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
-		if ok := redisClient.isClientInitiated(); ok {
+		if ok := redisClient.IsClientInitiated(); ok {
 			t.Errorf("RedisClient should not be initiated after being created")
 		} else {
 			// Initiate RedisClient
@@ -115,8 +115,8 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 			if initiateErr != nil {
 				t.Errorf("Initiate should notfail, Error was %s", initiateErr.Error())
 			} else {
-				if redisClient.isClientInitiated() != true {
-					t.Error("After successful init, redisClient.isClientInitiated() should be true.")
+				if redisClient.IsClientInitiated() != true {
+					t.Error("After successful init, redisClient.IsClientInitiated() should be true.")
 				}
 			}
 			// Create MemoryDatabase instance
