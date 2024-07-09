@@ -24,6 +24,13 @@ type MemoryDatabase struct {
 	client Client
 }
 
+// NewMemoryDatabase creates MemoryDatabase instance
+func NewMemoryDatabase(client Client) MemoryDatabase {
+	memorydatabase := MemoryDatabase{client: client}
+
+	return memorydatabase
+}
+
 // RedisClient is the real Redis client, it has Client methods
 type RedisClient struct {
 	config          *redisconfig.Config
