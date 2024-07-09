@@ -133,7 +133,7 @@ func TestRedisClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 		} else {
 			// Initiate MemoryDatabase instance
 			ctx := context.Background()
-			memoryDatabase := MemoryDatabase{client: &redisClient}
+			memoryDatabase := NewMemoryDatabase(&redisClient)
 			err := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 0)
 			if err == nil {
 				t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
