@@ -115,7 +115,7 @@ func TestSendMessageWithMockFailedSendMessage(t *testing.T) {
 	defer teardown()
 
 	rabbitmock := RabbitmqMock{LaunchError: true}
-	messageBroker := MessageBroker{client: rabbitmock}
+	messageBroker := MessageBroker{Client: rabbitmock}
 
 	testMessage := []byte("This is a test")
 
@@ -132,7 +132,7 @@ func TestSendMessageWithMockSendMessage(t *testing.T) {
 	defer teardown()
 
 	rabbitmock := RabbitmqMock{LaunchError: false}
-	messageBroker := MessageBroker{client: rabbitmock}
+	messageBroker := MessageBroker{Client: rabbitmock}
 
 	testMessage := []byte("This is a test")
 
@@ -156,7 +156,7 @@ func TestReceiveMessageWithMockFailure(t *testing.T) {
 
 	receiveErrors := make(chan error)
 
-	messageBroker := MessageBroker{client: rabbitmock}
+	messageBroker := MessageBroker{Client: rabbitmock}
 
 	go messageBroker.ReceiveMessages(ctx, queueName, messagesReceived, receiveErrors)
 
@@ -185,7 +185,7 @@ func TestReceiveMessageWithMock(t *testing.T) {
 
 	receiveErrors := make(chan error)
 
-	messageBroker := MessageBroker{client: rabbitmock}
+	messageBroker := MessageBroker{Client: rabbitmock}
 
 	go messageBroker.ReceiveMessages(ctx, queueName, messagesReceived, receiveErrors)
 

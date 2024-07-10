@@ -152,15 +152,15 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 
 // MessageBroker uses Client in order to operate against messagebroker instance
 type MessageBroker struct {
-	client Client
+	Client Client
 }
 
 // SendMessage sends a message through queueName using Client
 func (messageBroker MessageBroker) SendMessage(queueName string, message []byte) error {
-	return messageBroker.client.SendMessage(queueName, message)
+	return messageBroker.Client.SendMessage(queueName, message)
 }
 
 // ReceiveMessages receives messages through queueName using Client
 func (messageBroker MessageBroker) ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error) {
-	messageBroker.client.ReceiveMessages(ctx, queueName, messages, errors)
+	messageBroker.Client.ReceiveMessages(ctx, queueName, messages, errors)
 }
