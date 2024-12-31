@@ -1,13 +1,14 @@
-image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_22:202407020557
+image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_23:202412301859
 
 stages:
-    - lint
-    - unit_tests
-    - integration_tests
-    - coverage
-    - report
-    - scan
-    - deploy
+  - lint
+  - unit_tests
+  - integration_tests
+  - coverage
+  - report
+  - sonarqube-check
+  - sonarqube-vulnerability-report
+  - deploy
 
 lint_code:
   stage: lint
@@ -35,7 +36,6 @@ race_detector:
   script:
     - make race
 
-
 memory_sanitizer:
   stage: unit_tests
   before_script:
@@ -51,10 +51,13 @@ memory_sanitizer:
 
 messagebroker_unit_tests:
   stage: unit_tests
-  only:
-    - develop
-    - master
-    - /^.*messagebroker.*$/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*messagebroker.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
     - export GOPATH="$(pwd)/go"
@@ -66,13 +69,15 @@ messagebroker_unit_tests:
   script:
     - make test_messagebroker_unit
 
-
 memorydatabase_unit_tests:
   stage: unit_tests
-  only:
-    - develop
-    - master
-    - /^.*memorydatabase.*$/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*memorydatabase.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
     - export GOPATH="$(pwd)/go"
@@ -86,12 +91,15 @@ memorydatabase_unit_tests:
 
 messagebroker_integration_tests:
   stage: integration_tests
-  only:
-    - develop
-    - master
-    - /^.*messagebroker.*$/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*messagebroker.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202407020557
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202412301859
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
@@ -106,12 +114,15 @@ messagebroker_integration_tests:
 
 memorydatabase_integration_tests:
   stage: integration_tests
-  only:
-    - develop
-    - master
-    - /^.*memorydatabase.*$/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*memorydatabase.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_redis_server:202407020557
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_redis_server:202412301859
       alias: redis
   before_script:
     - export GOPATH="$(pwd)/go"
@@ -126,13 +137,16 @@ memorydatabase_integration_tests:
 
 coverage:
   stage: coverage
-  only:
-    - develop
-    - master
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_redis_server:202407020557
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_redis_server:202412301859
       alias: redis
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202407020557
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202412301859
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
@@ -164,8 +178,12 @@ code_coverage_report:
     - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make coverhtml
-  only:
-    - master
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   dependencies:
     - coverage
   artifacts:
@@ -175,28 +193,62 @@ code_coverage_report:
       - cover
     expire_in: 1 hour
 
-scan:
-  stage: scan
-  only:
-    - master
-  image: daedalusproject/base_sonar_scanner
-  before_script:
-    - rm -rf coverage.html
+sonarqube-check:
+  stage: sonarqube-check
+  image:
+    name: sonarsource/sonar-scanner-cli:11
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
+    GIT_DEPTH: "0" # Tells git to fetch all the branches of the project, required by the analysis task
   script:
-    - sonar-scanner -Dsonar.projectKey=go-services -Dsonar.sources=. -Dsonar.host.url=https://sonarqube.windmaker.net -Dsonar.login=${SONAR_LOGIN} -Dsonar.exclusions="*/*_test.go" -Dsonar.go.coverage.reportPaths="cover/coverage.report"
+    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  dependencies:
+    - coverage
+
+sonarqube-vulnerability-report:
+  stage: sonarqube-vulnerability-report
+  image:
+    name: sonarsource/sonar-scanner-cli:11
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
+    GIT_DEPTH: "0" # Tells git to fetch all the branches of the project, required by the analysis task
+  script:
+    - 'curl -u "${SONAR_TOKEN}:" "${SONAR_HOST_URL}/api/issues/gitlab_sast_export?projectKey=a-castellano_go-services_7930712b-1aab-4ea2-a917-853d91ec9cc6&branch=${CI_COMMIT_BRANCH}&pullRequest=${CI_MERGE_REQUEST_IID}" -o gl-sast-sonar-report.json'
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  artifacts:
+    expire_in: 1 day
+    reports:
+      sast: gl-sast-sonar-report.json
   dependencies:
     - coverage
 
 pages:
   stage: deploy
-  image: registry.windmaker.net:5005/a-castellano/limani/base:202407020557
+  image: registry.windmaker.net:5005/a-castellano/limani/base:202412301859
   script:
     - mkdir -p public
     - cp coverage.html public/
   artifacts:
     paths:
-    - public
-  only:
-    - master
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   dependencies:
     - code_coverage_report
