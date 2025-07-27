@@ -16,7 +16,7 @@ type Client interface {
 }
 ```
 
-[Rebbimq](https://git.windmaker.net/a-castellano/go-types/-/tree/master/rabbitmq) type from [go-types](https://git.windmaker.net/a-castellano/go-types/) can be used as Client.
+[Rabbitmq](https://git.windmaker.net/a-castellano/go-types/-/tree/master/rabbitmq) type from [go-types](https://git.windmaker.net/a-castellano/go-types/) can be used as Client.
 
 ```go
 package main
@@ -33,7 +33,7 @@ func main() {
 	queueName := "test"
 	testString := []byte("This is a Test")
 
-	rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
 	messageBroker := MessageBroker{client: rabbitmqClient}
 
@@ -42,7 +42,7 @@ func main() {
 ```
 ## Available Functions
 
-The following functions are avaible for interacting with MemoryDatabase
+The following functions are available for interacting with MessageBroker
 
 ### SendMessage
 ```go
@@ -56,12 +56,12 @@ Sends message through required queue.
 func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error)
 ```
 
-Receives messages from required queue. I can be sottped using context:
+Receives messages from required queue. It can be stopped using context:
 ```go
 rabbitmqConfig, _ := rabbitmqconfig.NewConfig()
 queueName := "test"
-rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
-messageBroker := MessageBroker{client: rabbitmqClient}
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
+	messageBroker := MessageBroker{client: rabbitmqClient}
 
 messagesReceived := make(chan []byte)
 

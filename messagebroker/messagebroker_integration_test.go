@@ -24,7 +24,7 @@ func TestRabbitmqFailedConnection(t *testing.T) {
 	queueName := "test"
 	testString := []byte("This is a Test")
 
-	rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
 	messageBroker := MessageBroker{client: rabbitmqClient}
 
@@ -49,7 +49,7 @@ func TestRabbitmqInvalidCredentials(t *testing.T) {
 	queueName := "test"
 	testString := []byte("This is a Test")
 
-	rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
 	messageBroker := MessageBroker{client: rabbitmqClient}
 
@@ -78,7 +78,7 @@ func TestRabbitmqSendMessage(t *testing.T) {
 	queueName := "test"
 	testString := []byte("This is a Test")
 
-	rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
 	messageBroker := MessageBroker{client: rabbitmqClient}
 
@@ -101,7 +101,7 @@ func TestRabbitmqReceiveMessageFromInvalidConfig(t *testing.T) {
 
 	rabbitmqConfig, _ := rabbitmqconfig.NewConfig()
 	queueName := "test"
-	rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 	messageBroker := MessageBroker{client: rabbitmqClient}
 
 	messagesReceived := make(chan []byte)
@@ -133,7 +133,7 @@ func TestRabbitmqReceiveMessageFromInvalidCredentials(t *testing.T) {
 
 	rabbitmqConfig, _ := rabbitmqconfig.NewConfig()
 	queueName := "test"
-	rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 	messageBroker := MessageBroker{client: rabbitmqClient}
 
 	messagesReceived := make(chan []byte)
@@ -169,7 +169,7 @@ func TestRabbitmqReceiveMessage(t *testing.T) {
 
 	rabbitmqConfig, _ := rabbitmqconfig.NewConfig()
 	queueName := "test"
-	rabbitmqClient := NewRabbimqClient(rabbitmqConfig)
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 	messageBroker := MessageBroker{client: rabbitmqClient}
 
 	messagesReceived := make(chan []byte)

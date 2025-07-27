@@ -91,7 +91,7 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 func (client *RedisClient) WriteString(ctx context.Context, key string, value string, ttl int) error {
 	status := client.client.Set(ctx, key, value, time.Duration(ttl)*time.Second)
 	if status == nil {
-		return errors.New("Something worng happend executing WriteString")
+		return errors.New("Something wrong happened executing WriteString")
 	}
 	return status.Err()
 }
@@ -99,7 +99,7 @@ func (client *RedisClient) WriteString(ctx context.Context, key string, value st
 // ReadString uses RedisClient for reading a string as value of required key in Redis
 func (client *RedisClient) ReadString(ctx context.Context, key string) (string, bool, error) {
 	var found bool = true
-	readedValue, err := client.client.Get(ctx, key).Result()
+	readValue, err := client.client.Get(ctx, key).Result()
 	if err != nil {
 		found = false
 		if err == goredis.Nil {
@@ -108,7 +108,7 @@ func (client *RedisClient) ReadString(ctx context.Context, key string) (string, 
 			return "", found, err
 		}
 	}
-	return readedValue, found, nil
+	return readValue, found, nil
 }
 
 // WriteString writes string in MemoryDatabase

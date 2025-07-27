@@ -45,7 +45,7 @@ func main() {
 		writeError := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 0)
 
 		// Read some value
-		readedValue, valueFound, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
+		readValue, valueFound, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
 	}
 }
 ```
@@ -61,7 +61,7 @@ Otherwise, memoryDatabase functions will fail and won't perform any action.
 
 ## Available Functions
 
-The following functions are avaible for interacting with MemoryDatabase
+The following functions are available for interacting with MemoryDatabase
 
 ### Initiate
 ```go

@@ -18,9 +18,9 @@ type RabbitmqClient struct {
 	config *rabbitmqconfig.Config
 }
 
-func NewRabbimqClient(rabbitmqConfig *rabbitmqconfig.Config) RabbitmqClient {
-	reabbitmqClient := RabbitmqClient{config: rabbitmqConfig}
-	return reabbitmqClient
+func NewRabbitmqClient(rabbitmqConfig *rabbitmqconfig.Config) RabbitmqClient {
+	rabbitmqClient := RabbitmqClient{config: rabbitmqConfig}
+	return rabbitmqClient
 }
 
 // SendMessage sends a message through queueName

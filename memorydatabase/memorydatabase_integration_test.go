@@ -4,9 +4,10 @@ package memorydatabase
 
 import (
 	"context"
-	redisconfig "github.com/a-castellano/go-types/redis"
 	"os"
 	"testing"
+
+	redisconfig "github.com/a-castellano/go-types/redis"
 )
 
 func TestRedisClientInvalidPort(t *testing.T) {
@@ -137,12 +138,12 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 			}
 			// Test ReadString with key "anykey"
 			// Test ReadString withinexistent key
-			readedValue, nowFound, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
+			readValue, nowFound, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
 			if readExistentKeyError != nil {
 				t.Errorf("ReadString from initiated redisClient shouldn't fail reading 'anykey'.")
 			}
-			if readedValue != "anyvalue" {
-				t.Errorf("ReadString from initiated redisClient should return 'anyvalue' but '%s' was returned", readedValue)
+			if readValue != "anyvalue" {
+				t.Errorf("ReadString from initiated redisClient should return 'anyvalue' but '%s' was returned", readValue)
 			}
 			if nowFound == false {
 				t.Errorf("ReadString from initiated redisClient found value should be true.")
