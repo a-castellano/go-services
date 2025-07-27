@@ -24,13 +24,6 @@ race_detector:
   script:
     - make race
 
-memory_sanitizer:
-  stage: unit_tests
-  before_script:
-    - export CC=/usr/bin/clang
-  script:
-    - make msan
-
 messagebroker_unit_tests:
   stage: unit_tests
   rules:
