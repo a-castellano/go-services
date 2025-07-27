@@ -14,12 +14,6 @@ lint_code:
   stage: lint
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make lint
 
@@ -27,12 +21,6 @@ race_detector:
   stage: unit_tests
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make race
 
@@ -40,12 +28,6 @@ memory_sanitizer:
   stage: unit_tests
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make msan
 
@@ -60,12 +42,6 @@ messagebroker_unit_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make test_messagebroker_unit
 
@@ -80,12 +56,6 @@ memorydatabase_unit_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make test_memorydatabase_unit
 
@@ -103,12 +73,6 @@ messagebroker_integration_tests:
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make test_messagebroker
 
@@ -125,12 +89,7 @@ memorydatabase_integration_tests:
     - name: registry.windmaker.net:5005/a-castellano/limani/base_redis_server:202412301859
       alias: redis
   before_script:
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
+    - export CC=/usr/bin/clang
     - export REDIS_IP="172.17.0.2"
   script:
     - make test_memorydatabase
@@ -150,12 +109,6 @@ coverage:
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
     - export REDIS_IP="172.17.0.2"
   script:
     - make coverage
@@ -170,12 +123,6 @@ code_coverage_report:
   stage: report
   before_script:
     - export CC=/usr/bin/clang
-    - export GOPATH="$(pwd)/go"
-    - mkdir -p "$(pwd)/go"
-    - go env -w GOPATH="$(pwd)/go"
-    - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/go-services
-    - cd $GOPATH/src/github.com/a-castellano/go-services
   script:
     - make coverhtml
   rules:
