@@ -1,4 +1,4 @@
-image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_23:202412301859
+image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24:202507251911
 
 stages:
   - lint
@@ -239,7 +239,7 @@ sonarqube-vulnerability-report:
 
 pages:
   stage: deploy
-  image: registry.windmaker.net:5005/a-castellano/limani/base:202412301859
+  image: registry.windmaker.net:5005/a-castellano/limani/base:202507251911
   script:
     - mkdir -p public
     - cp coverage.html public/
