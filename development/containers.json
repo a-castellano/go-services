@@ -1,0 +1,14 @@
+{
+  "project_name": "go-services",
+  "development_container_name": "go-services-dev",
+  "base_image": "registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24",
+  "extra_services": {
+    "memory_database": {
+      "name": "Memory Database Instance",
+      "base_image": "registry.windmaker.net:5005/a-castellano/limani/base_redis_server",
+      "opened_ports": [
+        "6379": "6379"
+      ],
+    }
+  }
+}
