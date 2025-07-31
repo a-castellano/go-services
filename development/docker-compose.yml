@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  golang:
+    image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24
+    volumes:
+      - ..:/app
+    working_dir: /app
+    command: tail -f /dev/null
+    networks:
+      - go-services-net
+
+  valkey:
+    image: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server
+    ports:
+      - "6379:6379"
+    networks:
+      - go-services-net
+
+  rabbitmq:
+    image: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - go-services-net
+
+networks:
+  go-services-net:
