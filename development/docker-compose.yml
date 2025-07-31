@@ -7,15 +7,19 @@ services:
       - ..:/app
     working_dir: /app
     command: tail -f /dev/null
+    environment:
+      - REDIS_IP=172.20.0.20
     networks:
-      - go-services-net
+      go-services-net:
+        ipv4_address: 172.20.0.10
 
   valkey:
     image: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server
     ports:
       - "6379:6379"
     networks:
-      - go-services-net
+      go-services-net:
+        ipv4_address: 172.20.0.20
 
   rabbitmq:
     image: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server
@@ -23,7 +27,12 @@ services:
       - "5672:5672"
       - "15672:15672"
     networks:
-      - go-services-net
+      go-services-net:
+        ipv4_address: 172.20.0.30
 
 networks:
   go-services-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

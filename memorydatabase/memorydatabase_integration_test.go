@@ -68,7 +68,7 @@ func TestRedisClientInitiate(t *testing.T) {
 	setUp()
 	defer teardown()
 
-	os.Setenv("REDIS_HOST", "redis")
+	os.Setenv("REDIS_HOST", "valkey")
 
 	config, err := redisconfig.NewConfig()
 
