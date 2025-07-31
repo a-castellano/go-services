@@ -1,4 +1,4 @@
-image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24:2025072805111
+image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24:202507280511
 
 stages:
   - lint
@@ -55,7 +55,7 @@ messagebroker_integration_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*messagebroker.*$/'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:2025072805111
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202507280511
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
@@ -72,7 +72,7 @@ memorydatabase_integration_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*memorydatabase.*$/'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:2025072805111
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
       alias: redis
   before_script:
     - export CC=/usr/bin/clang
@@ -89,9 +89,9 @@ coverage:
     - if: $CI_COMMIT_BRANCH == 'develop'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:2025072805111
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
       alias: redis
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:2025072805111
+    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202507280511
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
@@ -172,7 +172,7 @@ sonarqube-vulnerability-report:
 
 pages:
   stage: deploy
-  image: registry.windmaker.net:5005/a-castellano/limani/base:2025072805111
+  image: registry.windmaker.net:5005/a-castellano/limani/base:202507280511
   script:
     - mkdir -p public
     - cp coverage.html public/
