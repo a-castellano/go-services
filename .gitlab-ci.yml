@@ -87,7 +87,7 @@ memorydatabase_integration_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
     - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
-      alias: redis
+      alias: valkey
   before_script:
     - export CC=/usr/bin/clang
     - export REDIS_IP="172.17.0.2"
@@ -105,7 +105,7 @@ coverage:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
     - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
-      alias: redis
+      alias: valkey
     - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202507280511
       alias: rabbitmq
   before_script:
