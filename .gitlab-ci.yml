@@ -125,7 +125,6 @@ code_coverage_report:
   stage: report
   before_script:
     - export CC=/usr/bin/clang
-    - *install_mod
   script:
     - make coverhtml
   rules:
