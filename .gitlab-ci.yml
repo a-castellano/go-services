@@ -10,6 +10,10 @@ stages:
   - sonarqube-vulnerability-report
   - deploy
 
+.install_mod: &install_mod
+  - mkdir -p /root/go/pkg
+  - mv mod /root/go/pkg/
+
 lint_code:
   stage: lint
   before_script:
@@ -17,6 +21,12 @@ lint_code:
   script:
     - make lint
     - ls -l /root/go/pkg/mod/
+    - mv /root/go/pkg/mod ./
+  artifacts:
+    name: "lint-$CI_PIPELINE_ID"
+    paths:
+      - mod
+    expire_in: 1 hour
 
 messagebroker_unit_tests:
   stage: unit_tests
@@ -29,6 +39,7 @@ messagebroker_unit_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
+    - *.install_mod
   script:
     - make test_messagebroker_unit
 
@@ -43,6 +54,7 @@ memorydatabase_unit_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
+    - *.install_mod
   script:
     - make test_memorydatabase_unit
 
