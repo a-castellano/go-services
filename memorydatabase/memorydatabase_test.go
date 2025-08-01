@@ -356,3 +356,93 @@ func TestRedisClientInitiateWithResolvableDomain(t *testing.T) {
 		}
 	}
 }
+
+func TestWriteStringWithEmptyKey(t *testing.T) {
+	setUp()
+	defer teardown()
+
+	ctx := context.Background()
+	dbMock, mock := redismock.NewClientMock()
+	mock.Regexp().ExpectSet("", "anyvalue", 0).SetVal("OK")
+
+	redisClientMock := RedisClientMock{client: dbMock}
+	memoryDatabase := MemoryDatabase{client: &redisClientMock}
+	err := memoryDatabase.WriteString(ctx, "", "anyvalue", 0)
+
+	if err != nil {
+		t.Errorf("memoryDatabase.WriteString with empty key should not fail, error was '%s'", err.Error())
+	}
+}
+
+func TestWriteStringWithEmptyValue(t *testing.T) {
+	setUp()
+	defer teardown()
+
+	ctx := context.Background()
+	dbMock, mock := redismock.NewClientMock()
+	mock.Regexp().ExpectSet("anykey", "", 0).SetVal("OK")
+
+	redisClientMock := RedisClientMock{client: dbMock}
+	memoryDatabase := MemoryDatabase{client: &redisClientMock}
+	err := memoryDatabase.WriteString(ctx, "anykey", "", 0)
+
+	if err != nil {
+		t.Errorf("memoryDatabase.WriteString with empty value should not fail, error was '%s'", err.Error())
+	}
+}
+
+func TestWriteStringWithTTL(t *testing.T) {
+	setUp()
+	defer teardown()
+
+	ctx := context.Background()
+	dbMock, mock := redismock.NewClientMock()
+	mock.Regexp().ExpectSet("anykey", "anyvalue", 60*time.Second).SetVal("OK")
+
+	redisClientMock := RedisClientMock{client: dbMock}
+	memoryDatabase := MemoryDatabase{client: &redisClientMock}
+	err := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 60)
+
+	if err != nil {
+		t.Errorf("memoryDatabase.WriteString with TTL should not fail, error was '%s'", err.Error())
+	}
+}
+
+func TestWriteStringWithNegativeTTL(t *testing.T) {
+	setUp()
+	defer teardown()
+
+	ctx := context.Background()
+	dbMock, mock := redismock.NewClientMock()
+	mock.Regexp().ExpectSet("anykey", "anyvalue", 0).SetVal("OK")
+
+	redisClientMock := RedisClientMock{client: dbMock}
+	memoryDatabase := MemoryDatabase{client: &redisClientMock}
+	err := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", -10)
+
+	if err != nil {
+		t.Errorf("memoryDatabase.WriteString with negative TTL should not fail, error was '%s'", err.Error())
+	}
+}
+
+func TestWriteStringWithNilRedisResponse(t *testing.T) {
+	setUp()
+	defer teardown()
+
+	ctx := context.Background()
+	dbMock, mock := redismock.NewClientMock()
+	// Simular que Redis devuelve nil (caso edge)
+	mock.Regexp().ExpectSet("anykey", "anyvalue", 0).SetErr(errors.New("Something wrong happened executing WriteString"))
+
+	redisClientMock := RedisClientMock{client: dbMock}
+	memoryDatabase := MemoryDatabase{client: &redisClientMock}
+	err := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 0)
+
+	if err == nil {
+		t.Errorf("memoryDatabase.WriteString with nil Redis response should fail")
+	} else {
+		if err.Error() != "Something wrong happened executing WriteString" {
+			t.Errorf("memoryDatabase.WriteString with nil response should return specific error, got '%s'", err.Error())
+		}
+	}
+}
