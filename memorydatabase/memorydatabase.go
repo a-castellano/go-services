@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"regexp"
 	"time"
 
 	redisconfig "github.com/a-castellano/go-types/redis"
@@ -55,19 +54,16 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 
 	var actualHost string
 	// check if config.Host is a IP
-	var validIPv4 = regexp.MustCompile(`^(?:25[0-5]|2[0-4]\d|[0-1]?\d{1,2})(?:\.(?:25[0-5]|2[0-4]\d|[0-1]?\d{1,2})){3}$`)
-	var validIPv6 = regexp.MustCompile(`^([[:xdigit:]]{1,4}(?::[[:xdigit:]]{1,4}){7}|::|:(?::[[:xdigit:]]{1,4}){1,6}|[[:xdigit:]]{1,4}:(?::[[:xdigit:]]{1,4}){1,5}|(?:[[:xdigit:]]{1,4}:){2}(?::[[:xdigit:]]{1,4}){1,4}|(?:[[:xdigit:]]{1,4}:){3}(?::[[:xdigit:]]{1,4}){1,3}|(?:[[:xdigit:]]{1,4}:){4}(?::[[:xdigit:]]{1,4}){1,2}|(?:[[:xdigit:]]{1,4}:){5}:[[:xdigit:]]{1,4}|(?:[[:xdigit:]]{1,4}:){1,6}:)$`)
-
-	if !validIPv4.MatchString(client.config.Host) && !validIPv6.MatchString(client.config.Host) {
+	if ip := net.ParseIP(client.config.Host); ip != nil {
+		// Host is a valid IP
+		actualHost = client.config.Host
+	} else {
 		// client.config.Host is a domain
 		ips, lookupErr := net.LookupIP(client.config.Host)
 		if lookupErr != nil {
 			return lookupErr
 		}
 		actualHost = fmt.Sprintf("%s", ips[0])
-	} else {
-		// Host is a IP
-		actualHost = client.config.Host
 	}
 
 	redisAddr := fmt.Sprintf("%s:%d", actualHost, client.config.Port)

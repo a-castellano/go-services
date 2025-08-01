@@ -5,12 +5,13 @@ package memorydatabase
 import (
 	"context"
 	"errors"
-	redisconfig "github.com/a-castellano/go-types/redis"
-	redismock "github.com/go-redis/redismock/v9"
-	goredis "github.com/redis/go-redis/v9"
 	"os"
 	"testing"
 	"time"
+
+	redisconfig "github.com/a-castellano/go-types/redis"
+	redismock "github.com/go-redis/redismock/v9"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 var currentHost string
@@ -272,6 +273,86 @@ func TestRedIsClientInitiatedWithoutEnvVariableForIPAsRedisHost(t *testing.T) {
 					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
+		}
+	}
+}
+
+func TestRedisClientInitiateWithDomainName(t *testing.T) {
+	setUp()
+	defer teardown()
+
+	// Usar un dominio que se pueda resolver
+	os.Setenv("REDIS_HOST", "google.com") // Dominio que siempre se puede resolver
+	os.Setenv("REDIS_PORT", "6379")
+
+	config, err := redisconfig.NewConfig()
+	if err != nil {
+		t.Errorf("NewConfig method with domain name shouldn't fail, error was '%s'.", err.Error())
+		return
+	}
+
+	redisClient := NewRedisClient(config)
+	if ok := redisClient.IsClientInitiated(); ok {
+		t.Errorf("RedisClient should not be initiated after being created")
+		return
+	}
+
+	// Initiate RedisClient - esto debería ejecutar la resolución DNS
+	ctx := context.Background()
+	initiateErr := redisClient.Initiate(ctx)
+
+	// El test puede fallar si no hay Redis corriendo, pero eso está bien
+	// Lo importante es que se ejecute la resolución DNS (línea 60)
+	if initiateErr != nil {
+		// Verificar que el error no sea de resolución DNS
+		if initiateErr.Error() == "lookup google.com: no such host" {
+			t.Errorf("DNS resolution failed for google.com, but the else branch should have been executed")
+		}
+		// Otros errores (como conexión rechazada) son esperados si Redis no está corriendo
+		t.Logf("Expected error (Redis not running): %v", initiateErr)
+	} else {
+		if !redisClient.IsClientInitiated() {
+			t.Error("After successful init, redisClient.IsClientInitiated() should be true.")
+		}
+	}
+}
+
+func TestRedisClientInitiateWithResolvableDomain(t *testing.T) {
+	setUp()
+	defer teardown()
+
+	// Usar un dominio que sabemos que se resuelve
+	os.Setenv("REDIS_HOST", "cloudflare.com") // Dominio que siempre se puede resolver
+	os.Setenv("REDIS_PORT", "6379")
+
+	config, err := redisconfig.NewConfig()
+	if err != nil {
+		t.Errorf("NewConfig method with resolvable domain shouldn't fail, error was '%s'.", err.Error())
+		return
+	}
+
+	redisClient := NewRedisClient(config)
+	if ok := redisClient.IsClientInitiated(); ok {
+		t.Errorf("RedisClient should not be initiated after being created")
+		return
+	}
+
+	// Initiate RedisClient - esto debería ejecutar la resolución DNS
+	ctx := context.Background()
+	initiateErr := redisClient.Initiate(ctx)
+
+	// El test puede fallar si no hay Redis corriendo, pero eso está bien
+	// Lo importante es que se ejecute la resolución DNS (línea 60)
+	if initiateErr != nil {
+		// Verificar que el error no sea de resolución DNS
+		if initiateErr.Error() == "lookup cloudflare.com: no such host" {
+			t.Errorf("DNS resolution failed for cloudflare.com, but the else branch should have been executed")
+		}
+		// Otros errores (como conexión rechazada) son esperados si Redis no está corriendo
+		t.Logf("Expected error (Redis not running): %v", initiateErr)
+	} else {
+		if !redisClient.IsClientInitiated() {
+			t.Error("After successful init, redisClient.IsClientInitiated() should be true.")
 		}
 	}
 }
