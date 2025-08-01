@@ -245,3 +245,33 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 		}
 	}
 }
+
+func TestRedIsClientInitiatedWithoutEnvVariableForIPAsRedisHost(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	os.Setenv("REDIS_HOST", "127.0.0.1")
+	config, err := redisconfig.NewConfig()
+
+	if err != nil {
+		t.Errorf("NewConfig method with 127.0.0.1 as REDIS_HOST env varible suited shouldn't fail, error was '%s'.", err.Error())
+	} else {
+		redisClient := NewRedisClient(config)
+		if ok := redisClient.IsClientInitiated(); ok {
+			t.Errorf("RedisClient should not be initiated after being created")
+		} else {
+			// Initiate MemoryDatabase instance
+			ctx := context.Background()
+			memoryDatabase := NewMemoryDatabase(&redisClient)
+			err := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 0)
+			if err == nil {
+				t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
+			} else {
+				if err.Error() != "client is not initiated, cannot perform WriteString operation" {
+					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
+				}
+			}
+		}
+	}
+}
