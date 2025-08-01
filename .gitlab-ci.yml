@@ -114,17 +114,20 @@ coverage:
     - *install_mod
   script:
     - make coverage
+    - mv /root/go/pkg/mod ./
   coverage: /total:\s+.+\s(\d+\.\d+?)%$/
   artifacts:
     name: "coverage-$CI_PIPELINE_ID"
     paths:
       - cover
+      - mod
     expire_in: 1 hour
 
 code_coverage_report:
   stage: report
   before_script:
     - export CC=/usr/bin/clang
+    - *install_mod
   script:
     - make coverhtml
   rules:
