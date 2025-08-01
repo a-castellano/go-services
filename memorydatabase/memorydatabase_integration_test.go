@@ -31,7 +31,7 @@ func TestRedisClientInvalidPort(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr == nil {
-				t.Errorf("Redis required port is notvalid, Initiate should fail")
+				t.Errorf("Redis required port is not valid, Initiate should fail")
 			}
 		}
 	}
@@ -57,7 +57,7 @@ func TestRedisClientInvalidHost(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr == nil {
-				t.Errorf("Redis required host is notvalid, Initiate should fail")
+				t.Errorf("Redis required host is not valid, Initiate should fail")
 			}
 		}
 	}
@@ -83,7 +83,7 @@ func TestRedisClientInitiate(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr != nil {
-				t.Errorf("Initiate should notfail, Error was %s", initiateErr.Error())
+				t.Errorf("Initiate should not fail, Error was %s", initiateErr.Error())
 			} else {
 				if redisClient.IsClientInitiated() != true {
 					t.Error("After successful init, redisClient.IsClientInitiated() should be true.")
@@ -114,7 +114,7 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 			ctx := context.Background()
 			initiateErr := redisClient.Initiate(ctx)
 			if initiateErr != nil {
-				t.Errorf("Initiate should notfail, Error was %s", initiateErr.Error())
+				t.Errorf("Initiate should not fail, Error was %s", initiateErr.Error())
 			} else {
 				if redisClient.IsClientInitiated() != true {
 					t.Error("After successful init, redisClient.IsClientInitiated() should be true.")
@@ -127,17 +127,17 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 			if err != nil {
 				t.Errorf("WriteString with redisClient initiated should not fail")
 			}
-			// Test ReadString withinexistent key
+			// Test ReadString with inexistent key
 			_, notFound, readError := memoryDatabase.ReadString(ctx, "inexistentkey")
 			if readError != nil {
 				t.Error("ReadString from initiated redisClient should not fail with inexistent key.")
 			} else {
 				if notFound == true {
-					t.Error("ReadString from initiated redisClient should shold retrun found value as false.")
+					t.Error("ReadString from initiated redisClient should return found value as false.")
 				}
 			}
 			// Test ReadString with key "anykey"
-			// Test ReadString withinexistent key
+			// Test ReadString with inexistent key
 			readValue, nowFound, readExistentKeyError := memoryDatabase.ReadString(ctx, "anykey")
 			if readExistentKeyError != nil {
 				t.Errorf("ReadString from initiated redisClient shouldn't fail reading 'anykey'.")

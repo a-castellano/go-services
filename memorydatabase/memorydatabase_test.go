@@ -126,7 +126,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 	config, err := redisconfig.NewConfig()
 
 	if err != nil {
-		t.Errorf("NewConfig method without any env varible suited shouldn't fail, error was '%s'.", err.Error())
+		t.Errorf("NewConfig method without any env variable suited shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
 		if ok := redisClient.IsClientInitiated(); ok {
@@ -140,7 +140,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 				t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
 				if err.Error() != "client is not initiated, cannot perform WriteString operation" {
-					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
+					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should return error \"client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
 		}
@@ -164,7 +164,7 @@ func TestWriteStringWithMockSetFail(t *testing.T) {
 		t.Errorf("memoryDatabase.WriteString with mocked redis error should fail.")
 	} else {
 		if err.Error() != "FAIL" {
-			t.Errorf("memoryDatabase.WriteString call with mock shoud return error \"FAIL\", it has returned \"%s\"", err.Error())
+			t.Errorf("memoryDatabase.WriteString call with mock should return error \"FAIL\", it has returned \"%s\"", err.Error())
 		}
 	}
 }
@@ -190,7 +190,7 @@ func TestReadStringWithMockSetValue(t *testing.T) {
 			t.Errorf("memoryDatabase.ReadString with mocked value should return \"anyvalue\", it has returned \"%s\"", value)
 		}
 		if found == false {
-			t.Errorf("memoryDatabase.ReadString with mocked value should fond falue")
+			t.Errorf("memoryDatabase.ReadString with mocked value should find value")
 		}
 	}
 }
@@ -226,7 +226,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 	config, err := redisconfig.NewConfig()
 
 	if err != nil {
-		t.Errorf("NewConfig method without any env varible suited shouldn't fail, error was '%s'.", err.Error())
+		t.Errorf("NewConfig method without any env variable suited shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
 		if ok := redisClient.IsClientInitiated(); ok {
@@ -240,7 +240,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 				t.Errorf("memoryDatabase.ReadString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
 				if err.Error() != "client is not initiated, cannot perform ReadString operation" {
-					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"client is not initiated, cannot perform ReadString operation\", it has returned \"%s\"", err.Error())
+					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should return error \"client is not initiated, cannot perform ReadString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
 		}
@@ -256,7 +256,7 @@ func TestRedIsClientInitiatedWithoutEnvVariableForIPAsRedisHost(t *testing.T) {
 	config, err := redisconfig.NewConfig()
 
 	if err != nil {
-		t.Errorf("NewConfig method with 127.0.0.1 as REDIS_HOST env varible suited shouldn't fail, error was '%s'.", err.Error())
+		t.Errorf("NewConfig method with 127.0.0.1 as REDIS_HOST env variable suited shouldn't fail, error was '%s'.", err.Error())
 	} else {
 		redisClient := NewRedisClient(config)
 		if ok := redisClient.IsClientInitiated(); ok {
@@ -270,7 +270,7 @@ func TestRedIsClientInitiatedWithoutEnvVariableForIPAsRedisHost(t *testing.T) {
 				t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
 				if err.Error() != "client is not initiated, cannot perform WriteString operation" {
-					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should retrn error \"client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
+					t.Errorf("memoryDatabase.WriteString call without redisClient being initiated should return error \"client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
 		}

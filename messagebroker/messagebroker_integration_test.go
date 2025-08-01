@@ -4,10 +4,11 @@ package messagebroker
 
 import (
 	"context"
-	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 	"os"
 	"testing"
 	"time"
+
+	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 )
 
 func TestRabbitmqFailedConnection(t *testing.T) {
@@ -190,9 +191,9 @@ func TestRabbitmqReceiveMessage(t *testing.T) {
 	case messageReceived := <-messagesReceived:
 		stringReceived := string(messageReceived)
 		if stringReceived != "This is a Test" {
-			t.Errorf("Received Message shold be \"This is a Test\", not \"%s\".", stringReceived)
+			t.Errorf("Received Message should be \"This is a Test\", not \"%s\".", stringReceived)
 		}
 	default:
-		t.Errorf("TestRabbitmqReceiveMessage shold return a message or an error")
+		t.Errorf("TestRabbitmqReceiveMessage should return a message or an error")
 	}
 }
