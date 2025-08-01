@@ -16,6 +16,7 @@ lint_code:
     - export CC=/usr/bin/clang
   script:
     - make lint
+    - ls -l /root/go/pkg/mod/
 
 messagebroker_unit_tests:
   stage: unit_tests
