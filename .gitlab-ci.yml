@@ -72,6 +72,7 @@ messagebroker_integration_tests:
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
+    - *install_mod
   script:
     - make test_messagebroker
 
@@ -90,6 +91,7 @@ memorydatabase_integration_tests:
   before_script:
     - export CC=/usr/bin/clang
     - export REDIS_IP="172.17.0.2"
+    - *install_mod
   script:
     - make test_memorydatabase
 
@@ -109,6 +111,7 @@ coverage:
   before_script:
     - export CC=/usr/bin/clang
     - export REDIS_IP="172.17.0.2"
+    - *install_mod
   script:
     - make coverage
   coverage: /total:\s+.+\s(\d+\.\d+?)%$/
@@ -122,6 +125,7 @@ code_coverage_report:
   stage: report
   before_script:
     - export CC=/usr/bin/clang
+    - *install_mod
   script:
     - make coverhtml
   rules:
