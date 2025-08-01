@@ -39,7 +39,7 @@ messagebroker_unit_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
-    - *.install_mod
+    - *install_mod
   script:
     - make test_messagebroker_unit
 
@@ -54,7 +54,7 @@ memorydatabase_unit_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
-    - *.install_mod
+    - *install_mod
   script:
     - make test_memorydatabase_unit
 
