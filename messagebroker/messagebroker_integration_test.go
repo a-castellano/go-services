@@ -32,7 +32,7 @@ func TestRabbitmqFailedConnection(t *testing.T) {
 
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
-	messageBroker := MessageBroker{client: rabbitmqClient}
+	messageBroker := MessageBroker{Client: rabbitmqClient}
 
 	// Test sending a message with invalid connection
 	dial_error := messageBroker.SendMessage(queueName, testString)
@@ -61,7 +61,7 @@ func TestRabbitmqInvalidCredentials(t *testing.T) {
 
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
-	messageBroker := MessageBroker{client: rabbitmqClient}
+	messageBroker := MessageBroker{Client: rabbitmqClient}
 
 	// Test sending a message with invalid credentials
 	dial_error := messageBroker.SendMessage(queueName, testString)
@@ -94,7 +94,7 @@ func TestRabbitmqSendMessage(t *testing.T) {
 
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
-	messageBroker := MessageBroker{client: rabbitmqClient}
+	messageBroker := MessageBroker{Client: rabbitmqClient}
 
 	// Test sending a message with valid configuration
 	sendError := messageBroker.SendMessage(queueName, testString)
@@ -122,7 +122,7 @@ func TestRabbitmqReceiveMessageFromInvalidConfig(t *testing.T) {
 
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
-	messageBroker := MessageBroker{client: rabbitmqClient}
+	messageBroker := MessageBroker{Client: rabbitmqClient}
 
 	// Create channels for receiving messages and errors
 	messagesReceived := make(chan []byte)
@@ -163,7 +163,7 @@ func TestRabbitmqReceiveMessageFromInvalidCredentials(t *testing.T) {
 
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
-	messageBroker := MessageBroker{client: rabbitmqClient}
+	messageBroker := MessageBroker{Client: rabbitmqClient}
 
 	// Create channels for receiving messages and errors
 	messagesReceived := make(chan []byte)
@@ -208,7 +208,7 @@ func TestRabbitmqReceiveMessage(t *testing.T) {
 
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
-	messageBroker := MessageBroker{client: rabbitmqClient}
+	messageBroker := MessageBroker{Client: rabbitmqClient}
 
 	// Create channels for receiving messages and errors
 	messagesReceived := make(chan []byte)
