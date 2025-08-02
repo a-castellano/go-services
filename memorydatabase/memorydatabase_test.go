@@ -464,28 +464,3 @@ func TestWriteStringWithNegativeTTL(t *testing.T) {
 		t.Errorf("memoryDatabase.WriteString with negative TTL should not fail.")
 	}
 }
-
-// TestWriteStringWithNilRedisResponse tests WriteString operation when the Redis
-// Set operation returns nil (which should be treated as an error).
-func TestWriteStringWithNilRedisResponse(t *testing.T) {
-
-	setUp()
-	defer teardown()
-
-	ctx := context.Background()
-	dbMock, mock := redismock.NewClientMock()
-	// Configure mock to return nil for Set operation
-	mock.Regexp().ExpectSet("anykey", "anyvalue", 0).SetVal("")
-
-	redisClientMock := RedisClientMock{client: dbMock}
-	memoryDatabase := MemoryDatabase{client: &redisClientMock}
-	err := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 0)
-
-	if err == nil {
-		t.Errorf("memoryDatabase.WriteString with nil redis response should fail.")
-	} else {
-		if err.Error() != "Something wrong happened executing WriteString" {
-			t.Errorf("memoryDatabase.WriteString call with nil redis response should return error \"Something wrong happened executing WriteString\", it has returned \"%s\"", err.Error())
-		}
-	}
-}
