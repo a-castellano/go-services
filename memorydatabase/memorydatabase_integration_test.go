@@ -112,7 +112,7 @@ func TestRedisClientInitiateWithIP(t *testing.T) {
 	defer teardown()
 
 	// Set environment variables for Redis with IP address
-	os.Setenv("REDIS_HOST", "172.20.0.20")
+	os.Setenv("REDIS_HOST", "172.17.0.2")
 	os.Setenv("REDIS_PORT", "6379")
 
 	config, err := redisconfig.NewConfig()
