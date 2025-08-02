@@ -11,26 +11,14 @@ The go-services library provides high-level abstractions for common infrastructu
 ## Available Services
 
 ### MemoryDatabase
-A service for managing interactions with memory databases. Currently supports Redis as the primary implementation.
 
-**Features:**
-- High-level interface for key-value operations
-- Support for TTL (time-to-live) on stored values
-- Automatic connection management and health checks
-- DNS resolution for domain names
-- Comprehensive error handling
+A service for managing interactions with memory databases. Currently supports Redis as the primary implementation.
 
 **Location:** [MemoryDatabase](/memorydatabase)
 
 ### MessageBroker
-A service for managing interactions with message broker services. Currently supports RabbitMQ as the primary implementation.
 
-**Features:**
-- Asynchronous message sending and receiving
-- Persistent message delivery
-- Context-based cancellation for long-running operations
-- Automatic queue declaration
-- Quality of service configuration
+A service for managing interactions with message broker services. Currently supports RabbitMQ as the primary implementation.
 
 **Location:** [MessageBroker](/messagebroker)
 
@@ -50,7 +38,7 @@ package main
 import (
     "context"
     "log"
-    
+
     "github.com/a-castellano/go-services/memorydatabase"
     redisconfig "github.com/a-castellano/go-types/redis"
 )
@@ -61,30 +49,30 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Create and initialize Redis client
     redisClient := memorydatabase.NewRedisClient(config)
     ctx := context.Background()
-    
+
     if err := redisClient.Initiate(ctx); err != nil {
         log.Fatal(err)
     }
-    
+
     // Create MemoryDatabase instance
     memoryDB := memorydatabase.NewMemoryDatabase(&redisClient)
-    
+
     // Write a value with TTL
     err = memoryDB.WriteString(ctx, "my-key", "my-value", 3600) // 1 hour TTL
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Read the value
     value, found, err := memoryDB.ReadString(ctx, "my-key")
     if err != nil {
         log.Fatal(err)
     }
-    
+
     if found {
         log.Printf("Value: %s", value)
     }
@@ -100,7 +88,7 @@ import (
     "context"
     "log"
     "time"
-    
+
     "github.com/a-castellano/go-services/messagebroker"
     rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 )
@@ -111,25 +99,25 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Create RabbitMQ client and MessageBroker
     rabbitmqClient := messagebroker.NewRabbitmqClient(config)
     messageBroker := messagebroker.MessageBroker{client: rabbitmqClient}
-    
+
     // Send a message
     err = messageBroker.SendMessage("my-queue", []byte("Hello, World!"))
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Receive messages
     messages := make(chan []byte)
     errors := make(chan error)
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
-    
+
     go messageBroker.ReceiveMessages(ctx, "my-queue", messages, errors)
-    
+
     select {
     case msg := <-messages:
         log.Printf("Received: %s", string(msg))
@@ -143,27 +131,23 @@ func main() {
 
 ## Development
 
-### Prerequisites
-
-- Go 1.24 or later
-- Docker and Docker Compose (for integration tests)
-- Make (optional, for using Makefile targets)
-
 ### Setting up the Development Environment
 
 1. Clone the repository:
+
 ```bash
 git clone https://git.windmaker.net/a-castellano/go-services.git
 cd go-services
 ```
 
 2. Start the development environment:
+
 ```bash
-cd development
-docker-compose up -d
+docker-compose -f development/docker-compose up -d
 ```
 
 This will start:
+
 - A Go development container
 - A Valkey (Redis-compatible) server
 - A RabbitMQ server
@@ -204,39 +188,18 @@ make coverage
 ### Environment Variables
 
 #### For MemoryDatabase (Redis)
+
 - `REDIS_HOST` - Redis server hostname or IP
 - `REDIS_PORT` - Redis server port (default: 6379)
 - `REDIS_PASSWORD` - Redis server password (optional)
 - `REDIS_DATABASE` - Redis database number (default: 0)
 
 #### For MessageBroker (RabbitMQ)
+
 - `RABBITMQ_HOST` - RabbitMQ server hostname or IP
 - `RABBITMQ_PORT` - RabbitMQ server port (default: 5672)
 - `RABBITMQ_USER` - RabbitMQ username
 - `RABBITMQ_PASSWORD` - RabbitMQ password
-
-## Architecture
-
-The library follows a clean architecture pattern with clear separation of concerns:
-
-1. **Interface Layer**: Defines contracts for each service (Client interfaces)
-2. **Implementation Layer**: Concrete implementations (RedisClient, RabbitmqClient)
-3. **Service Layer**: High-level service wrappers (MemoryDatabase, MessageBroker)
-
-This design allows for:
-- Easy testing with mocks
-- Simple swapping of implementations
-- Clear dependency management
-- Consistent error handling
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
 
 ## License
 
