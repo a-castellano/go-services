@@ -143,14 +143,16 @@ cd go-services
 2. Start the development environment:
 
 ```bash
-docker-compose -f development/docker-compose up -d
+docker-compose -f development/docker-compose.yml up -d
 ```
 
 This will start:
 
 - A Go development container
-- A Valkey (Redis-compatible) server
-- A RabbitMQ server
+- A Valkey (Redis-compatible) server at `172.17.0.2`
+- A RabbitMQ server at `172.17.0.30`
+
+**Note**: The Docker Compose configuration uses hardcoded IP addresses (`172.17.0.0/16` subnet) to match the integration tests and ensure consistent behavior across different environments.
 
 ### Running Tests
 

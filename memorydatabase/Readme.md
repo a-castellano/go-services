@@ -185,6 +185,8 @@ For integration tests, you need a Redis server running. You can use the provided
 docker-compose -f development/docker-compose.yml up -d valkey
 ```
 
+**Important Note**: The integration tests use hardcoded IP addresses (`172.17.0.2`) to ensure consistent behavior across different environments. The Docker Compose configuration uses the same IP range (`172.17.0.0/16`) to avoid network conflicts and ensure tests run reliably.
+
 Then run the integration tests:
 
 ```bash

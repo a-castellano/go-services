@@ -252,8 +252,10 @@ make test
 For integration tests, you need a RabbitMQ server running. You can use the provided Docker Compose setup:
 
 ```bash
-docker-compose -f development/docker-compose.yml -d rabbitmq
+docker-compose -f development/docker-compose.yml up -d rabbitmq
 ```
+
+**Important Note**: The integration tests use hardcoded IP addresses to ensure consistent behavior across different environments. The Docker Compose configuration uses the same IP range (`172.17.0.0/16`) to avoid network conflicts and ensure tests run reliably.
 
 Then run the integration tests:
 

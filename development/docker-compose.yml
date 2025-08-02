@@ -7,33 +7,33 @@ services:
   golang:
     image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24
     volumes:
-      - ..:/app  # Mount the project directory into the container
+      - ..:/app # Mount the project directory into the container
     working_dir: /app
-    command: tail -f /dev/null  # Keep container running
+    command: tail -f /dev/null # Keep container running
     environment:
-      - REDIS_IP=172.20.0.20  # Set Redis IP for testing
+      - REDIS_IP=172.17.0.20 # Set Redis IP for testing
     networks:
       go-services-net:
-        ipv4_address: 172.20.0.10
+        ipv4_address: 172.17.0.10
 
   # Valkey server (Redis-compatible) for memory database testing
   valkey:
     image: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server
     ports:
-      - "6379:6379"  # Expose Redis port for external access
+      - "6379:6379" # Expose Redis port for external access
     networks:
       go-services-net:
-        ipv4_address: 172.20.0.20
+        ipv4_address: 172.17.0.2
 
   # RabbitMQ server for message broker testing
   rabbitmq:
     image: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server
     ports:
-      - "5672:5672"   # AMQP protocol port
+      - "5672:5672" # AMQP protocol port
       - "15672:15672" # RabbitMQ management interface port
     networks:
       go-services-net:
-        ipv4_address: 172.20.0.30
+        ipv4_address: 172.17.0.30
 
 # Custom network configuration for service communication
 networks:
@@ -41,4 +41,4 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16  # Private subnet for service communication
+        - subnet: 172.17.0.0/16 # Private subnet for service communication
