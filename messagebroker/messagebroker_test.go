@@ -142,7 +142,7 @@ func TestSendMessageWithMockFailedSendMessage(t *testing.T) {
 
 	// Create a mock client that will fail
 	rabbitmqMock := RabbitmqMock{LaunchError: true}
-	messageBroker := MessageBroker{client: rabbitmqMock}
+	messageBroker := MessageBroker{Client: rabbitmqMock}
 
 	// Test sending a message with a failing mock
 	err := messageBroker.SendMessage("test", []byte("test"))
@@ -165,7 +165,7 @@ func TestSendMessageWithMockSendMessage(t *testing.T) {
 
 	// Create a mock client that will succeed
 	rabbitmqMock := RabbitmqMock{LaunchError: false}
-	messageBroker := MessageBroker{client: rabbitmqMock}
+	messageBroker := MessageBroker{Client: rabbitmqMock}
 
 	// Test sending a message with a successful mock
 	err := messageBroker.SendMessage("test", []byte("test"))
@@ -184,7 +184,7 @@ func TestReceiveMessageWithMockFailure(t *testing.T) {
 
 	// Create a mock client that will fail
 	rabbitmqMock := RabbitmqMock{LaunchError: true}
-	messageBroker := MessageBroker{client: rabbitmqMock}
+	messageBroker := MessageBroker{Client: rabbitmqMock}
 
 	// Create channels for receiving messages and errors
 	messages := make(chan []byte)
@@ -218,7 +218,7 @@ func TestReceiveMessageWithMock(t *testing.T) {
 
 	// Create a mock client that will succeed
 	rabbitmqMock := RabbitmqMock{LaunchError: false}
-	messageBroker := MessageBroker{client: rabbitmqMock}
+	messageBroker := MessageBroker{Client: rabbitmqMock}
 
 	// Create channels for receiving messages and errors
 	messages := make(chan []byte)

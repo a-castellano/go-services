@@ -16,6 +16,8 @@ stages:
 
 lint_code:
   stage: lint
+  rules:
+    - if: true
   before_script:
     - export CC=/usr/bin/clang
   script:
