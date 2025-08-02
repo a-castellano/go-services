@@ -183,18 +183,18 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 // MessageBroker provides a high-level interface for message broker operations.
 // It uses a Client implementation to perform actual message broker operations.
 type MessageBroker struct {
-	client Client
+	Client Client
 }
 
 // SendMessage sends a message to the specified queue using the underlying client.
 // This is a wrapper method that delegates to the client's SendMessage method.
 func (messageBroker MessageBroker) SendMessage(queueName string, message []byte) error {
-	return messageBroker.client.SendMessage(queueName, message)
+	return messageBroker.Client.SendMessage(queueName, message)
 }
 
 // ReceiveMessages receives messages from the specified queue using the underlying client.
 // This is a wrapper method that delegates to the client's ReceiveMessages method.
 // The operation can be stopped by canceling the provided context.
 func (messageBroker MessageBroker) ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error) {
-	messageBroker.client.ReceiveMessages(ctx, queueName, messages, errors)
+	messageBroker.Client.ReceiveMessages(ctx, queueName, messages, errors)
 }
