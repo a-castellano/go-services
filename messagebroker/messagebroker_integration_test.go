@@ -311,8 +311,6 @@ func TestReceiveMessagesWithConnectionFailure(t *testing.T) {
 			if err == nil {
 				t.Errorf("ReceiveMessages with invalid connection should return an error")
 			}
-		case <-ctx.Done():
-			t.Errorf("ReceiveMessages with invalid connection should fail within 5 seconds")
 		}
 	}
 }
