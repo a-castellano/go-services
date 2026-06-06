@@ -5,12 +5,6 @@ package memorydatabase
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net"
-	"time"
-
-	redisconfig "github.com/a-castellano/go-types/redis"
-	goredis "github.com/redis/go-redis/v9"
 )
 
 // Client interface defines the contract for memory database operations.
