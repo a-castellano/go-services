@@ -70,7 +70,7 @@ messagebroker_integration_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*messagebroker.*$/'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202507280511
+    - name: harbor.windmaker.net/limani/base_rabbitmq_server
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
@@ -88,7 +88,7 @@ memorydatabase_integration_tests:
     - if: $CI_COMMIT_BRANCH =~ '/^.*memorydatabase.*$/'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
+    - name: harbor.windmaker.net/limani/base_valkey_server
       alias: valkey
   before_script:
     - export CC=/usr/bin/clang
@@ -106,9 +106,9 @@ coverage:
     - if: $CI_COMMIT_BRANCH == 'develop'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
+    - name: harbor.windmaker.net/limani/base_valkey_server
       alias: valkey
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202507280511
+    - name: harbor.windmaker.net/limani/base_rabbitmq_server
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
