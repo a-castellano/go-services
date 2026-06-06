@@ -213,3 +213,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [go-redis](https://github.com/redis/go-redis) - Redis client
 - [amqp091-go](https://github.com/rabbitmq/amqp091-go) - RabbitMQ client
 - [redismock](https://github.com/go-redis/redismock) - Redis mocking for tests
+
+## Local Development
+
+I use docker containers to run rests and any other golang related task.
+
+```bash
+podman run --rm -it -v ~/Projects/go-services/:/go-services --workdir /go-services   harbor.windmaker.net/limani/base_golang_1_26   /bin/bash
+```
