@@ -23,3 +23,7 @@ go.work.sum
 
 cover/*
 coverage.html
+.vscode/*
+
+# Local Go module cache (populated by development/docker-compose.yml)
+development/gomodcache/

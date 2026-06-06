@@ -143,7 +143,7 @@ cd go-services
 2. Start the development environment:
 
 ```bash
-docker-compose -f development/docker-compose.yml up -d
+podman-compose -f development/docker-compose.yml up -d
 ```
 
 This will start:
@@ -216,8 +216,38 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Local Development
 
-I use docker containers to run rests and any other golang related task.
+Go is not installed locally — all Go tasks run inside a Podman container using the same image as CI.
+
+### Running tests with services
+
+The Go module cache is persisted in `development/gomodcache/` on the host and mounted into the container, so dependencies are not downloaded each time the development environment is deployed.
+
+Start all services and the Go container using `podman-compose`:
 
 ```bash
-podman run --rm -it -v ~/Projects/go-services/:/go-services --workdir /go-services   harbor.windmaker.net/limani/base_golang_1_26   /bin/bash
+podman-compose -f development/docker-compose.yml up -d
 ```
+
+Then exec into the Go container to run any make target:
+
+```bash
+podman exec -it development_golang_1 make test_messagebroker
+podman exec -it development_golang_1 make test_memorydatabase
+podman exec -it development_golang_1 make coverage
+```
+
+To stop and remove the containers when done:
+
+```bash
+podman-compose -f development/docker-compose.yml down
+```
+
+### Interactive shell
+
+To get an interactive shell inside the Go container (with access to all services):
+
+```bash
+podman exec -it development_golang_1 /bin/bash
+```
+
+> **Note**: The container name (`development_golang_1`) may vary. Use `podman ps` to confirm the actual name.
