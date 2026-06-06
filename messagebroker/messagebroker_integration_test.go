@@ -283,7 +283,7 @@ func TestReceiveMessagesWithConnectionFailure(t *testing.T) {
 
 	// Set invalid environment variables to cause connection failure
 	os.Setenv("RABBITMQ_HOST", "invalid-host")
-	os.Setenv("RABBITMQ_PORT", "5672")
+	os.Setenv("RABBITMQ_PORT", "5673")
 	os.Setenv("RABBITMQ_USER", "guest")
 	os.Setenv("RABBITMQ_PASSWORD", "guest")
 
