@@ -233,6 +233,7 @@ Then exec into the Go container to run any make target:
 ```bash
 podman exec -it development_golang_1 make test_messagebroker
 podman exec -it development_golang_1 make test_memorydatabase
+podman exec -it development_golang_1 make test_redis
 podman exec -it development_golang_1 make coverage
 ```
 

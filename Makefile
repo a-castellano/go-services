@@ -41,6 +41,14 @@ test_memorydatabase: ## Run memorydatabase related tests
 test_memorydatabase_unit: ## Run memorydatabase unit tests
 	@go test --tags=memorydatabase_unit_tests -short ./...
 
+# Run all redis-related tests (both unit and integration)
+test_redis: ## Run redis related tests
+	@go test --tags=redis_tests -short ./...
+
+# Run only redis unit tests
+test_redis_unit: ## Run redis unit tests
+	@go test --tags=redis_unit_tests -short ./...
+
 # Run tests with data race detector enabled
 race: ## Run data race detector
 	@go test -race -short ./...
