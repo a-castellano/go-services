@@ -6,13 +6,11 @@ package redis
 
 import (
 	"context"
-	"errors"
 	"os"
 	"testing"
 	"time"
 
 	redisconfig "github.com/a-castellano/go-types/redis"
-	redismock "github.com/go-redis/redismock/v9"
 	goredis "github.com/redis/go-redis/v9"
 )
 
@@ -144,4 +142,64 @@ func (mock *RedisClientMock) ReadString(ctx context.Context, key string) (string
 		}
 	}
 	return value, found, nil
+}
+
+// TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated tests that WriteString
+// fails when the Redis client is not initialized, even when environment variables are set.
+func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	config, err := redisconfig.NewConfig()
+
+	if err != nil {
+		t.Errorf("NewConfig method without any env variable suited shouldn't fail, error was '%s'.", err.Error())
+	} else {
+		redisClient := NewRedisClient(config)
+		if ok := redisClient.IsClientInitiated(); ok {
+			t.Errorf("RedisClient should not be initiated after being created")
+		} else {
+			// Test WriteString operation with uninitialized client
+			ctx := context.Background()
+			err := redisClient.WriteString(ctx, "anykey", "anyvalue", 0)
+			if err == nil {
+				t.Errorf("redisClient.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
+			} else {
+				if err.Error() != "Redis client is not initiated, cannot perform WriteString operation" {
+					t.Errorf("redisClient.WriteString call without redisClient being initiated should return error \"Redis client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
+				}
+			}
+		}
+	}
+}
+
+// TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated tests that ReadString
+// fails when the Redis client is not initialized, even when environment variables are set.
+func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	config, err := redisconfig.NewConfig()
+
+	if err != nil {
+		t.Errorf("NewConfig method without any env variable suited shouldn't fail, error was '%s'.", err.Error())
+	} else {
+		redisClient := NewRedisClient(config)
+		if ok := redisClient.IsClientInitiated(); ok {
+			t.Errorf("RedisClient should not be initiated after being created")
+		} else {
+			// Test WriteString operation with uninitialized client
+			ctx := context.Background()
+			_, _, err := redisClient.ReadString(ctx, "anykey")
+			if err == nil {
+				t.Errorf("redisClient.ReadString call without redisClient being initiated should fail as redisClient is not initiated")
+			} else {
+				if err.Error() != "Redis client is not initiated, cannot perform ReadString operation" {
+					t.Errorf("redisClient.ReadString call without redisClient being initiated should return error \"Redis client is not initiated, cannot perform ReadString operation\", it has returned \"%s\"", err.Error())
+				}
+			}
+		}
+	}
 }

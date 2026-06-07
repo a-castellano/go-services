@@ -78,6 +78,9 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 // The TTL is specified in seconds. Use 0 for no expiration (infinite TTL).
 // Returns an error if the operation fails or if the client is not initialized.
 func (client *RedisClient) WriteString(ctx context.Context, key string, value string, ttl int) error {
+	if client.clientInitiated == false {
+		return errors.New("Redis client is not initiated, cannot perform WriteString operation")
+	}
 	status := client.client.Set(ctx, key, value, time.Duration(ttl)*time.Second)
 	if status == nil {
 		return errors.New("Something wrong happened executing WriteString")
@@ -90,15 +93,19 @@ func (client *RedisClient) WriteString(ctx context.Context, key string, value st
 // If the key doesn't exist, the boolean will be false and the string will be empty.
 func (client *RedisClient) ReadString(ctx context.Context, key string) (string, bool, error) {
 	var found bool = true
+	var emptyValue string = ""
+	if client.clientInitiated == false {
+		return emptyValue, found, errors.New("Redis client is not initiated, cannot perform ReadString operation")
+	}
 	readValue, err := client.client.Get(ctx, key).Result()
 	if err != nil {
 		found = false
 		if err == goredis.Nil {
 			// Key doesn't exist in Redis
-			return "", found, nil
+			return emptyValue, found, nil
 		} else {
 			// Other error occurred
-			return "", found, err
+			return emptyValue, found, err
 		}
 	}
 	return readValue, found, nil
