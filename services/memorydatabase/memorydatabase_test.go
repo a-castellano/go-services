@@ -162,7 +162,7 @@ func TestReadString(t *testing.T) {
 	ctx := context.Background()
 	client := ClientMock{initiated: true, errored: false}
 
-	memoryDatabase := MemoryDatabase{client: &client}
+	memoryDatabase := NewMemoryDatabase(&client)
 
 	_, _, err := memoryDatabase.ReadString(ctx, "anykey")
 
