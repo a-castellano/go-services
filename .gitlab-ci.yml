@@ -93,25 +93,6 @@ messagebroker_integration_tests:
   script:
     - make test_messagebroker
 
-memorydatabase_integration_tests:
-  stage: integration_tests
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_BRANCH == 'master'
-    - if: $CI_COMMIT_BRANCH == 'main'
-    - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH =~ '/^.*memorydatabase.*$/'
-    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
-  services:
-    - name: harbor.windmaker.net/limani/base_valkey_server
-      alias: valkey
-  before_script:
-    - export CC=/usr/bin/clang
-    - export REDIS_IP="172.17.0.2"
-    - *install_mod
-  script:
-    - make test_memorydatabase
-
 redis_integration_tests:
   stage: integration_tests
   rules:

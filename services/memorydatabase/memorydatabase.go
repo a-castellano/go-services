@@ -44,7 +44,7 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 	if memorydatabase.client.IsClientInitiated() {
 		return memorydatabase.client.WriteString(ctx, key, value, ttl)
 	} else {
-		return errors.New("client is not initiated, cannot perform WriteString operation")
+		return errors.New("MemoryDatabase client is not initiated, cannot perform WriteString operation")
 	}
 }
 
@@ -56,6 +56,6 @@ func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string
 	if memorydatabase.client.IsClientInitiated() {
 		return memorydatabase.client.ReadString(ctx, key)
 	} else {
-		return "", false, errors.New("client is not initiated, cannot perform ReadString operation")
+		return "", false, errors.New("MemoryDatabase client is not initiated, cannot perform ReadString operation")
 	}
 }
