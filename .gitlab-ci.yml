@@ -142,8 +142,14 @@ coverage:
 
 code_coverage_report:
   stage: report
+  services:
+    - name: harbor.windmaker.net/limani/base_valkey_server
+      alias: valkey
+    - name: harbor.windmaker.net/limani/base_rabbitmq_server
+      alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
+    - export REDIS_IP="172.17.0.2"
     - *install_mod
   script:
     - make coverhtml
