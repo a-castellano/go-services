@@ -61,9 +61,9 @@ msan: ## Run memory sanitizer
 coverage: ## Generate global code coverage report
 	./scripts/coverage.sh;
 
-# Generate global code coverage report in HTML format
+# Generate global code coverage report in HTML format (requires cover/coverage.report from coverage target)
 coverhtml: ## Generate global code coverage report in HTML
-	./scripts/coverage.sh html;
+	go tool cover -html=cover/coverage.report -o coverage.html;
 
 # Build target (commented out as this is a library project)
 #build: ## Build the binary file
