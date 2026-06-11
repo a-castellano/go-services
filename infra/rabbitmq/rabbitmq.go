@@ -31,6 +31,8 @@ type AMQPChannel interface {
 	QueueDeclare(name string, durable, autoDelete, exclusive, noWait bool, args amqp.Table) (amqp.Queue, error)
 	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
 	Close() error
+	Qos(prefetchCount, prefetchSize int, global bool) error
+	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
 }
 
 // DialFunc is the type of the function used to establish a connection. It is the
@@ -77,6 +79,16 @@ func (r *realChannel) QueueDeclare(name string, durable, autoDelete, exclusive, 
 // Publish delegates to the underlying channel.
 func (r *realChannel) Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error {
 	return r.ch.Publish(exchange, key, mandatory, immediate, msg)
+}
+
+// Qos delegates to the underlying channel.
+func (r *realChannel) Qos(prefetchCount, prefetchSize int, global bool) error {
+	return r.ch.Qos(prefetchCount, prefetchSize, global)
+}
+
+// Consume delegates to the underlying channel.
+func (r *realChannel) Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
+	return r.ch.Consume(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
 }
 
 // Channel opens a real AMQP channel and wraps it in a realChannel so the caller
@@ -176,7 +188,7 @@ func (client RabbitmqClient) SendMessage(queueName string, message []byte) error
 func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error) {
 
 	// Establish connection to RabbitMQ server
-	conn, errDial := amqp.Dial(client.config.ConnectionString)
+	conn, errDial := client.dial(client.config.ConnectionString)
 
 	if errDial != nil {
 		errors <- errDial
