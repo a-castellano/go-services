@@ -45,6 +45,21 @@ messagebroker_unit_tests:
   script:
     - make test_messagebroker_unit
 
+rabbitmq_unit_tests:
+  stage: unit_tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*rabbitmq.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  before_script:
+    - export CC=/usr/bin/clang
+    - *install_mod
+  script:
+    - make test_rabbitmq_unit
+
 memorydatabase_unit_tests:
   stage: unit_tests
   rules:
@@ -75,14 +90,14 @@ redis_unit_tests:
   script:
     - make test_redis_unit
 
-messagebroker_integration_tests:
+rabbitmq_integration_tests:
   stage: integration_tests
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH == 'master'
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH =~ '/^.*messagebroker.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*rabbitmq.*$/'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
     - name: harbor.windmaker.net/limani/base_rabbitmq_server
@@ -91,7 +106,7 @@ messagebroker_integration_tests:
     - export CC=/usr/bin/clang
     - *install_mod
   script:
-    - make test_messagebroker
+    - make test_rabbitmq
 
 redis_integration_tests:
   stage: integration_tests

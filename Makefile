@@ -25,9 +25,13 @@ test: ## Run unit tests
 test_integration: ## Run integration tests
 	@go test --tags=integration_tests -short ./...
 
-# Run all messagebroker-related tests (both unit and integration)
-test_messagebroker: ## Run messagebroker related tests
-	@go test --tags=messagebroker_tests -short ./...
+# Run all rabbitmq-related tests (both unit and integration)
+test_rabbitmq: ## Run rabbitmq related tests
+	@go test --tags=rabbitmq_tests -short ./...
+
+# Run only rabbitmq unit tests
+test_rabbitmq_unit: ## Run rabbitmq unit tests
+	@go test --tags=rabbitmq_unit_tests -short ./...
 
 # Run only messagebroker unit tests
 test_messagebroker_unit: ## Run messagebroker unit tests
