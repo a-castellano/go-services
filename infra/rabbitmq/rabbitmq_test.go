@@ -1,27 +1,32 @@
 //go:build integration_tests || unit_tests || rabbitmq_tests || rabbitmq_unit_tests
 
-// Tests cover both RabbitMQ client functionality.
+// Build tags: this file only compiles (and its tests only run) when one of these
+// tags is passed, e.g. `go test -tags unit_tests`. A plain `go test` skips it.
+
+// Unit tests for the rabbitmq package. They exercise RabbitmqClient against
+// in-memory fakes (no real broker), relying on the injected DialFunc to swap the
+// real connection for a configurable fake one.
 package rabbitmq
 
 import (
-	"context"
 	"errors"
+	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"os"
-	"strings"
 	"testing"
-	"time"
 )
 
-// fakeConnection satisfies AMQPConnection interface.
+// fakeConnection satisfies the AMQPConnection interface without touching a real
+// broker. Each fail* flag lets a test force the corresponding method to error,
+// and the flags meant for the channel are forwarded to the fakeChannel it creates
+// in Channel(). deliveries holds the messages a test wants Consume() to emit.
 type fakeConnection struct {
-	failClose        bool
-	failChannel      bool
-	failChannelClose bool
-	failQueueDeclare bool
-	failPublish      bool
-	failQos          bool
-	failConsume      bool
+	failClose        bool // make Close() return an error
+	failChannel      bool // make Channel() return an error
+	failChannelClose bool // forwarded to the channel's Close()
+	failQueueDeclare bool // forwarded to the channel's QueueDeclare()
+	failPublish      bool // forwarded to the channel's Publish()
+	failQos          bool // forwarded to the channel's Qos()
+	failConsume      bool // forwarded to the channel's Consume()
 	deliveries       []amqp.Delivery
 }
 
@@ -34,7 +39,8 @@ func (f *fakeConnection) Close() error {
 	}
 }
 
-// Channel
+// Channel returns a fakeChannel pre-configured with the connection's fail flags
+// and deliveries, or an error when failChannel is set.
 func (f *fakeConnection) Channel() (AMQPChannel, error) {
 	if f.failChannel {
 		return nil, errors.New("Fatal error opening channel")
@@ -95,7 +101,10 @@ func (f *fakeChannel) Qos(prefetchCount, prefetchSize int, global bool) error {
 	}
 }
 
-// Consume is a stub that returns a dummy channel and no error.
+// Consume returns a buffered channel pre-loaded with the configured deliveries,
+// then closes it. Closing is essential: ReceiveMessages drains the channel with a
+// `for range`, which only ends once the channel is closed. Without close() the
+// consumer would block forever.
 func (f *fakeChannel) Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
 	if f.failConsume {
 		return nil, errors.New("Fatal error consuming messages")
@@ -110,8 +119,60 @@ func (f *fakeChannel) Consume(queue, consumer string, autoAck, exclusive, noLoca
 	}
 }
 
-func fakeDial(url string) (AMQPConnection, error) {
-	// need to add failures and behaviour
-	fakeConn := fakeConnection{failClose: false}
-	return &fakeConn, nil
+// dialReturning builds a DialFunc that always hands back the given connection.
+// Each test configures its own *fakeConnection (deliveries, fail flags) and
+// passes it here, so the injected dialer carries exactly that behaviour.
+func dialReturning(conn *fakeConnection) DialFunc {
+	return func(url string) (AMQPConnection, error) {
+		return conn, nil
+	}
+}
+
+// dialFailing builds a DialFunc that always fails, simulating amqp.Dial returning
+// an error (e.g. the broker is unreachable).
+func dialFailing() DialFunc {
+	return func(url string) (AMQPConnection, error) {
+		return nil, errors.New("Fatal error: dial failed")
+	}
+}
+
+// TestSendMessageFailDial verifies that when the dial step fails, SendMessage
+// surfaces that error and does not proceed.
+func TestSendMessageFailDial(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialFailing()}
+
+	err := client.SendMessage("test-queue", []byte("test message"))
+
+	if err == nil {
+		t.Fatal("Dial mocks a fail but SendMessage did not return an error")
+	}
+	expectedError := "Fatal error: dial failed"
+	if err.Error() != expectedError {
+		t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+	}
+
+}
+
+// TestSendMessageFailConnChannel verifies that when opening the channel fails
+// (dial succeeds, conn.Channel() errors), SendMessage returns that error.
+func TestSendMessageFailConnChannel(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	conn := &fakeConnection{failChannel: true}
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
+
+	err := client.SendMessage("test-queue", []byte("test message"))
+
+	if err == nil {
+		t.Fatal("Dial mocks a fail but SendMessage did not return an error")
+	}
+	expectedError := "Fatal error opening channel"
+	if err.Error() != expectedError {
+		t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+	}
+
 }
