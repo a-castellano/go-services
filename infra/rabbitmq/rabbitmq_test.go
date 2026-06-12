@@ -168,7 +168,7 @@ func TestSendMessageFailConnChannel(t *testing.T) {
 	err := client.SendMessage("test-queue", []byte("test message"))
 
 	if err == nil {
-		t.Fatal("Dial mocks a fail but SendMessage did not return an error")
+		t.Fatal("Channel creation mocks a fail but SendMessage did not return an error")
 	}
 	expectedError := "Fatal error opening channel"
 	if err.Error() != expectedError {
@@ -189,9 +189,30 @@ func TestSendMessageFailQueueDeclare(t *testing.T) {
 	err := client.SendMessage("test-queue", []byte("test message"))
 
 	if err == nil {
-		t.Fatal("Dial mocks a fail but SendMessage did not return an error")
+		t.Fatal("Queue declaring mocks a fail but SendMessage did not return an error")
 	}
 	expectedError := "Fatal error declaring queue"
+	if err.Error() != expectedError {
+		t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+	}
+
+}
+
+// TestSendMessageFailChannelPublish verifies that when channel publish fails
+// SendMessage surfaces that error.
+func TestSendMessageFailChannelPublish(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	conn := &fakeConnection{failPublish: true}
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
+
+	err := client.SendMessage("test-queue", []byte("test message"))
+
+	if err == nil {
+		t.Fatal("Publish mocks a fail but SendMessage did not return an error")
+	}
+	expectedError := "Fatal error publishing message"
 	if err.Error() != expectedError {
 		t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
 	}
