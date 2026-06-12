@@ -176,3 +176,24 @@ func TestSendMessageFailConnChannel(t *testing.T) {
 	}
 
 }
+
+// TestSendMessageFailQueueDeclare verifies that when queue is declared and it fails
+// SendMessage surfaces that error and does not proceed to publish.
+func TestSendMessageFailQueueDeclare(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	conn := &fakeConnection{failQueueDeclare: true}
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
+
+	err := client.SendMessage("test-queue", []byte("test message"))
+
+	if err == nil {
+		t.Fatal("Dial mocks a fail but SendMessage did not return an error")
+	}
+	expectedError := "Fatal error declaring queue"
+	if err.Error() != expectedError {
+		t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+	}
+
+}
