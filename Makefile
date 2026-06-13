@@ -25,9 +25,13 @@ test: ## Run unit tests
 test_integration: ## Run integration tests
 	@go test --tags=integration_tests -short ./...
 
-# Run all messagebroker-related tests (both unit and integration)
-test_messagebroker: ## Run messagebroker related tests
-	@go test --tags=messagebroker_tests -short ./...
+# Run all rabbitmq-related tests (both unit and integration)
+test_rabbitmq: ## Run rabbitmq related tests
+	@go test --tags=rabbitmq_tests -short ./...
+
+# Run only rabbitmq unit tests
+test_rabbitmq_unit: ## Run rabbitmq unit tests
+	@go test --tags=rabbitmq_unit_tests -short ./...
 
 # Run only messagebroker unit tests
 test_messagebroker_unit: ## Run messagebroker unit tests
@@ -41,6 +45,14 @@ test_memorydatabase: ## Run memorydatabase related tests
 test_memorydatabase_unit: ## Run memorydatabase unit tests
 	@go test --tags=memorydatabase_unit_tests -short ./...
 
+# Run all redis-related tests (both unit and integration)
+test_redis: ## Run redis related tests
+	@go test --tags=redis_tests -short ./...
+
+# Run only redis unit tests
+test_redis_unit: ## Run redis unit tests
+	@go test --tags=redis_unit_tests -short ./...
+
 # Run tests with data race detector enabled
 race: ## Run data race detector
 	@go test -race -short ./...
@@ -53,9 +65,9 @@ msan: ## Run memory sanitizer
 coverage: ## Generate global code coverage report
 	./scripts/coverage.sh;
 
-# Generate global code coverage report in HTML format
+# Generate global code coverage report in HTML format (requires cover/coverage.report from coverage target)
 coverhtml: ## Generate global code coverage report in HTML
-	./scripts/coverage.sh html;
+	go tool cover -html=cover/coverage.report -o coverage.html;
 
 # Build target (commented out as this is a library project)
 #build: ## Build the binary file
@@ -64,6 +76,7 @@ coverhtml: ## Generate global code coverage report in HTML
 # Clean up build artifacts
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
+	@rm -rf cover
 
 # Display help information for all available targets
 help: ## Display this help screen

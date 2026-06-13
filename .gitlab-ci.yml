@@ -1,4 +1,4 @@
-image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24:202507280511
+image: harbor.windmaker.net/limani/base_golang_1_26
 
 stages:
   - lint
@@ -45,6 +45,21 @@ messagebroker_unit_tests:
   script:
     - make test_messagebroker_unit
 
+rabbitmq_unit_tests:
+  stage: unit_tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*rabbitmq.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  before_script:
+    - export CC=/usr/bin/clang
+    - *install_mod
+  script:
+    - make test_rabbitmq_unit
+
 memorydatabase_unit_tests:
   stage: unit_tests
   rules:
@@ -60,42 +75,57 @@ memorydatabase_unit_tests:
   script:
     - make test_memorydatabase_unit
 
-messagebroker_integration_tests:
+redis_unit_tests:
+  stage: unit_tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*redis.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  before_script:
+    - export CC=/usr/bin/clang
+    - *install_mod
+  script:
+    - make test_redis_unit
+
+rabbitmq_integration_tests:
   stage: integration_tests
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH == 'master'
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH =~ '/^.*messagebroker.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*rabbitmq.*$/'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202507280511
+    - name: harbor.windmaker.net/limani/base_rabbitmq_server
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
     - *install_mod
   script:
-    - make test_messagebroker
+    - make test_rabbitmq
 
-memorydatabase_integration_tests:
+redis_integration_tests:
   stage: integration_tests
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH == 'master'
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH =~ '/^.*memorydatabase.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*redis.*$/'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
+    - name: harbor.windmaker.net/limani/base_valkey_server
       alias: valkey
   before_script:
     - export CC=/usr/bin/clang
     - export REDIS_IP="172.17.0.2"
     - *install_mod
   script:
-    - make test_memorydatabase
+    - make test_redis
 
 coverage:
   stage: coverage
@@ -106,9 +136,9 @@ coverage:
     - if: $CI_COMMIT_BRANCH == 'develop'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_valkey_server:202507280511
+    - name: harbor.windmaker.net/limani/base_valkey_server
       alias: valkey
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202507280511
+    - name: harbor.windmaker.net/limani/base_rabbitmq_server
       alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
@@ -193,7 +223,7 @@ sonarqube-vulnerability-report:
 
 pages:
   stage: deploy
-  image: registry.windmaker.net:5005/a-castellano/limani/base:202507280511
+  image: harbor.windmaker.net/limani/base
   script:
     - mkdir -p public
     - cp coverage.html public/
