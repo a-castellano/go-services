@@ -82,9 +82,6 @@ func (client *RedisClient) WriteString(ctx context.Context, key string, value st
 		return errors.New("Redis client is not initiated, cannot perform WriteString operation")
 	}
 	status := client.client.Set(ctx, key, value, time.Duration(ttl)*time.Second)
-	if status == nil {
-		return errors.New("Something wrong happened executing WriteString")
-	}
 	return status.Err()
 }
 

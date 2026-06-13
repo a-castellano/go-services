@@ -6,12 +6,13 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
 
 	redisconfig "github.com/a-castellano/go-types/redis"
-	goredis "github.com/redis/go-redis/v9"
+	redismock "github.com/go-redis/redismock/v9"
 )
 
 // Global variables to store original environment variable values
@@ -106,46 +107,10 @@ func teardown() {
 
 }
 
-// RedisClientMock implements the Client interface for testing purposes.
-// It uses a mocked Redis client to simulate Redis operations without requiring a real Redis server.
-type RedisClientMock struct {
-	client *goredis.Client // Mocked Redis client for testing
-}
-
-// IsClientInitiated always returns true for the mock client.
-// This simulates a properly initialized Redis client.
-func (mock *RedisClientMock) IsClientInitiated() bool {
-	return true
-}
-
-// WriteString uses the mocked Redis client to simulate writing a string value.
-// This method delegates to the underlying mocked client's Set operation.
-func (mock *RedisClientMock) WriteString(ctx context.Context, key string, value string, ttl int) error {
-	return mock.client.Set(ctx, key, value, time.Duration(ttl)*time.Second).Err()
-}
-
-// ReadString uses the mocked Redis client to simulate reading a string value.
-// This method delegates to the underlying mocked client's Get operation.
-// It properly handles the case where a key doesn't exist (goredis.Nil error).
-func (mock *RedisClientMock) ReadString(ctx context.Context, key string) (string, bool, error) {
-	var found bool = true
-	value, getError := mock.client.Get(ctx, key).Result()
-
-	if getError != nil {
-		found = false
-		if getError == goredis.Nil {
-			// Key doesn't exist in Redis
-			return value, found, nil
-		} else {
-			// Other error occurred
-			return value, found, getError
-		}
-	}
-	return value, found, nil
-}
-
-// TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated tests that WriteString
-// fails when the Redis client is not initialized, even when environment variables are set.
+// TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated verifies that WriteString
+// fails when the Redis client was created but never initialized. With no env variables set,
+// NewConfig still succeeds (defaults apply), but the client is not connected, so any write
+// must be rejected with the "not initiated" error.
 func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) {
 
 	setUp()
@@ -174,8 +139,10 @@ func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 	}
 }
 
-// TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated tests that ReadString
-// fails when the Redis client is not initialized, even when environment variables are set.
+// TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated verifies that ReadString
+// fails when the Redis client was created but never initialized. With no env variables set,
+// NewConfig still succeeds (defaults apply), but the client is not connected, so any read
+// must be rejected with the "not initiated" error.
 func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 
 	setUp()
@@ -190,7 +157,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 		if ok := redisClient.IsClientInitiated(); ok {
 			t.Errorf("RedisClient should not be initiated after being created")
 		} else {
-			// Test WriteString operation with uninitialized client
+			// Test ReadString operation with uninitialized client
 			ctx := context.Background()
 			_, _, err := redisClient.ReadString(ctx, "anykey")
 			if err == nil {
@@ -201,5 +168,51 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// TestFailedWriteWithMock verifies that WriteString propagates the underlying Redis error.
+// It uses redismock to build an already-initiated client whose SET command is mocked to
+// fail, then asserts WriteString returns that exact error instead of swallowing it.
+func TestFailedWriteWithMock(t *testing.T) {
+	db, mock := redismock.NewClientMock()
+	// Expect a SET (key, value, 30s TTL) and force it to return an error.
+	mock.Regexp().ExpectSet(`[a-z]+`, `[a-z]+`, 30*time.Second).SetErr(errors.New("Mocked write fail"))
+	config := redisconfig.Config{}
+	client := RedisClient{config: &config, client: db, clientInitiated: true}
+
+	ctx := context.Background()
+	writeErr := client.WriteString(ctx, "testkey", "value", 30)
+	if writeErr == nil {
+		t.Errorf("WriteString with mocked client that will error in write should fail too.")
+	} else {
+		expectedError := "Mocked write fail"
+		if writeErr.Error() != expectedError {
+			t.Fatalf("Expected error '%s' but got '%s'", expectedError, writeErr.Error())
+		}
+
+	}
+}
+
+// TestFailedReadWithMock verifies that ReadString propagates the underlying Redis error.
+// It uses redismock to build an already-initiated client whose GET command is mocked to
+// fail, then asserts ReadString returns that exact error instead of swallowing it.
+func TestFailedReadWithMock(t *testing.T) {
+	db, mock := redismock.NewClientMock()
+	// Expect a GET (key) and force it to return an error.
+	mock.Regexp().ExpectGet(`[a-z]+`).SetErr(errors.New("Mocked read fail"))
+	config := redisconfig.Config{}
+	client := RedisClient{config: &config, client: db, clientInitiated: true}
+
+	ctx := context.Background()
+	_, _, readErr := client.ReadString(ctx, "testkey")
+	if readErr == nil {
+		t.Errorf("ReadString with mocked client that will error in read should fail too.")
+	} else {
+		expectedError := "Mocked read fail"
+		if readErr.Error() != expectedError {
+			t.Fatalf("Expected error '%s' but got '%s'", expectedError, readErr.Error())
+		}
+
 	}
 }

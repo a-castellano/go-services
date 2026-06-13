@@ -266,5 +266,4 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 		}
 	}
 
-	errors <- nil
 }

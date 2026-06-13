@@ -285,3 +285,42 @@ func TestRabbitmqReceiveMessage(t *testing.T) {
 
 	cancel()
 }
+
+// TestRabbitmqReceiveMessageEmpty tests RabbitMQ message receiving when context cancels the method
+func TestRabbitmqReceiveMessageEmpty(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	// Set environment variables for RabbitMQ with valid credentials
+	os.Setenv("RABBITMQ_HOST", "rabbitmq")
+	os.Setenv("RABBITMQ_PORT", "5672")
+	os.Setenv("RABBITMQ_USER", "guest")
+	os.Setenv("RABBITMQ_PASSWORD", "guest")
+
+	rabbitmqConfig, _ := rabbitmqconfig.NewConfig()
+	queueName := "empty"
+
+	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
+
+	// Create channels for receiving messages and errors
+	messagesReceived := make(chan []byte)
+	ctx, cancel := context.WithCancel(context.Background())
+	receiveErrors := make(chan error)
+
+	// Start receiving messages in a goroutine
+	go rabbitmqClient.ReceiveMessages(ctx, queueName, messagesReceived, receiveErrors)
+
+	// Stop message receiver
+	cancel()
+	// Wait for a message or error
+	select {
+	case receivedError := <-receiveErrors:
+		if receivedError != nil {
+			t.Errorf("TestRabbitmqReceiveMessage with canceled broker shouldn't fail, error was '%s'.", receivedError.Error())
+		}
+	case <-time.After(5 * time.Second):
+		t.Logf("TestRabbitmqReceiveMessage didn't receive any message in 5 seconds, which is expected if no messages are sent to the queue.")
+	}
+
+}
