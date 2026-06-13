@@ -9,10 +9,12 @@
 package rabbitmq
 
 import (
+	"context"
 	"errors"
 	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"testing"
+	"time"
 )
 
 // fakeConnection satisfies the AMQPConnection interface without touching a real
@@ -217,4 +219,168 @@ func TestSendMessageFailChannelPublish(t *testing.T) {
 		t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
 	}
 
+}
+
+// TestReceiveMessagesFailDial verifies that when the dial step fails, ReceiveMessages
+// surfaces that error and does not proceed.
+func TestReceiveMessagesFailDial(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialFailing()}
+
+	// Create channels for receiving messages and errors
+	messages := make(chan []byte)
+	errorsChan := make(chan error)
+
+	// Start receiving messages in a goroutine
+	ctx := context.Background()
+	go client.ReceiveMessages(ctx, "test", messages, errorsChan)
+
+	// Wait for the error
+	select {
+	case err := <-errorsChan:
+		if err == nil {
+			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+		} else {
+			expectedError := "Fatal error: dial failed"
+			if err.Error() != expectedError {
+				t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+			}
+		}
+	case <-time.After(5 * time.Second):
+		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+	}
+}
+
+// TestReceiveMessagesFailConnChannel verifies that when mocked client fail creating a channel , ReceiveMessages
+// surfaces that error and does not proceed.
+func TestReceiveMessagesFailConnChannel(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	conn := &fakeConnection{failChannel: true}
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
+
+	// Create channels for receiving messages and errors
+	messages := make(chan []byte)
+	errorsChan := make(chan error)
+
+	// Start receiving messages in a goroutine
+	ctx := context.Background()
+	go client.ReceiveMessages(ctx, "test", messages, errorsChan)
+
+	// Wait for the error
+	select {
+	case err := <-errorsChan:
+		if err == nil {
+			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+		} else {
+			expectedError := "Fatal error opening channel"
+			if err.Error() != expectedError {
+				t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+			}
+		}
+	case <-time.After(5 * time.Second):
+		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+	}
+}
+
+// TestReceiveMessagesQueueDeclare verifies that when mocked client fail declaring a queue , ReceiveMessages
+// surfaces that error and does not proceed.
+func TestReceiveMessagesFailQueueDeclare(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	conn := &fakeConnection{failQueueDeclare: true}
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
+
+	// Create channels for receiving messages and errors
+	messages := make(chan []byte)
+	errorsChan := make(chan error)
+
+	// Start receiving messages in a goroutine
+	ctx := context.Background()
+	go client.ReceiveMessages(ctx, "test", messages, errorsChan)
+
+	// Wait for the error
+	select {
+	case err := <-errorsChan:
+		if err == nil {
+			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+		} else {
+			expectedError := "Fatal error declaring queue"
+			if err.Error() != expectedError {
+				t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+			}
+		}
+	case <-time.After(5 * time.Second):
+		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+	}
+}
+
+// TestReceiveMessagesFailChannelQos verifies that when mocked client fails definnign channel QOS , ReceiveMessages
+// surfaces that error and does not proceed.
+func TestReceiveMessagesFailChannelQos(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	conn := &fakeConnection{failQos: true}
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
+
+	// Create channels for receiving messages and errors
+	messages := make(chan []byte)
+	errorsChan := make(chan error)
+
+	// Start receiving messages in a goroutine
+	ctx := context.Background()
+	go client.ReceiveMessages(ctx, "test", messages, errorsChan)
+
+	// Wait for the error
+	select {
+	case err := <-errorsChan:
+		if err == nil {
+			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+		} else {
+			expectedError := "Fatal error setting QoS"
+			if err.Error() != expectedError {
+				t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+			}
+		}
+	case <-time.After(5 * time.Second):
+		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+	}
+}
+
+// TestReceiveMessagesFailConsme verifies that when mocked client fails consuming messages , ReceiveMessages
+// surfaces that error and does not proceed.
+func TestReceiveMessagesFailConsme(t *testing.T) {
+
+	rabbitmqConfig := rabbitmqconfig.Config{}
+
+	conn := &fakeConnection{failConsume: true}
+	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
+
+	// Create channels for receiving messages and errors
+	messages := make(chan []byte)
+	errorsChan := make(chan error)
+
+	// Start receiving messages in a goroutine
+	ctx := context.Background()
+	go client.ReceiveMessages(ctx, "test", messages, errorsChan)
+
+	// Wait for the error
+	select {
+	case err := <-errorsChan:
+		if err == nil {
+			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+		} else {
+			expectedError := "Fatal error consuming messages"
+			if err.Error() != expectedError {
+				t.Fatalf("Expected error '%s' but got '%s'", expectedError, err.Error())
+			}
+		}
+	case <-time.After(5 * time.Second):
+		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+	}
 }
