@@ -76,6 +76,7 @@ coverhtml: ## Generate global code coverage report in HTML
 # Clean up build artifacts
 clean: ## Remove previous build
 	@rm -f $(PROJECT_NAME)
+	@rm -rf cover
 
 # Display help information for all available targets
 help: ## Display this help screen
