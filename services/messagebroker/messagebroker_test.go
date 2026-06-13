@@ -1,6 +1,6 @@
 //go:build integration_tests || unit_tests || messagebroker_tests || messagebroker_unit_tests
 
-// Package messagebroker_test contains unit tests for the messagebroker package.
+// Package messagebroker contains unit tests for the messagebroker package.
 package messagebroker
 
 import (
@@ -23,7 +23,7 @@ func TestSendMessage(t *testing.T) {
 	client := mockBroker{}
 	messageBroker := MessageBroker{Client: &client}
 
-	// Test sending a message with a failing mock
+	// Test sending a message through the mock client
 	messageBroker.SendMessage("test", []byte("test"))
 
 }
