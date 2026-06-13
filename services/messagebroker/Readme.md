@@ -1,25 +1,23 @@
 # MessageBroker
 
-This service manages interactions with message broker services. Currently supports RabbitMQ as the primary message broker implementation.
+This service manages interactions with message broker services. It exposes a small, driver-agnostic interface for sending and receiving messages. The driver bundled in this repository is RabbitMQ ([infra/rabbitmq](../../infra/rabbitmq/Readme.md)); any client that satisfies the `Client` interface works.
 
 ## Overview
 
-The MessageBroker service provides a high-level abstraction for message broker operations. It uses a Client interface pattern, allowing you to easily swap implementations and test your code with mocks. The service currently supports RabbitMQ through the `RabbitmqClient` implementation.
+`MessageBroker` is a high-level abstraction that delegates every operation to a `Client` implementation. Your application depends on `MessageBroker` (and the `Client` interface), not on a concrete broker, which keeps your code decoupled and easy to test with mocks. The repository ships a RabbitMQ driver (`rabbitmq.RabbitmqClient`) that satisfies the interface.
 
 ## Features
 
 - **Asynchronous messaging** with persistent delivery
-- **Context-based cancellation** for long-running operations
-- **Automatic queue declaration** and management
+- **Context-based cancellation** for long-running receivers
+- **Automatic queue declaration** on both send and receive
 - **Quality of service configuration** for message processing
-- **Comprehensive error handling** with detailed error messages
-- **Mock support** for testing without a real RabbitMQ server
+- **Pluggable drivers** through the `Client` interface
+- **Mock support** for testing without a real broker
 
-## Usage
+## Client interface
 
-MessageBroker requires a Client interface for being used. This library offers RabbitMQ as a Client implementation.
-
-### Client Interface
+A `MessageBroker` needs a value that implements this interface:
 
 ```go
 type Client interface {
@@ -28,42 +26,56 @@ type Client interface {
 }
 ```
 
-### Basic Example
+The RabbitMQ driver in [infra/rabbitmq](../../infra/rabbitmq/Readme.md) implements it.
+
+## Usage
+
+Import the service and the driver:
+
+- Service: `github.com/a-castellano/go-services/services/messagebroker`
+- RabbitMQ driver: `github.com/a-castellano/go-services/infra/rabbitmq`
+
+The `MessageBroker` struct has a single exported field, `Client`, so you inject the driver directly:
+
+```go
+messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
+```
+
+### Basic example
 
 ```go
 package main
 
 import (
-    "context"
     "log"
-    "time"
 
-    "github.com/a-castellano/go-services/messagebroker"
+    "github.com/a-castellano/go-services/infra/rabbitmq"
+    "github.com/a-castellano/go-services/services/messagebroker"
     rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 )
 
 func main() {
-    // Create RabbitMQ configuration from environment variables
+    // Build the RabbitMQ configuration from environment variables.
     config, err := rabbitmqconfig.NewConfig()
     if err != nil {
         log.Fatal(err)
     }
 
-    // Create RabbitMQ client and MessageBroker
-    rabbitmqClient := messagebroker.NewRabbitmqClient(config)
-    messageBroker := messagebroker.MessageBroker{client: rabbitmqClient}
+    // Build the driver and inject it into the service.
+    rabbitmqClient := rabbitmq.NewRabbitmqClient(config)
+    messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
 
-    // Send a message
-    err = messageBroker.SendMessage("my-queue", []byte("Hello, World!"))
-    if err != nil {
+    // Send a message.
+    if err := messageBroker.SendMessage("my-queue", []byte("Hello, World!")); err != nil {
         log.Fatal(err)
     }
-
     log.Println("Message sent successfully")
 }
 ```
 
-### Advanced Example with Message Receiving
+### Receiving messages
+
+`ReceiveMessages` runs until the context is canceled or an error occurs, streaming message bodies to the `messages` channel and errors to the `errors` channel. A `nil` value on the `errors` channel signals a clean stop.
 
 ```go
 package main
@@ -73,7 +85,8 @@ import (
     "log"
     "time"
 
-    "github.com/a-castellano/go-services/messagebroker"
+    "github.com/a-castellano/go-services/infra/rabbitmq"
+    "github.com/a-castellano/go-services/services/messagebroker"
     rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 )
 
@@ -83,36 +96,17 @@ func main() {
         log.Fatal(err)
     }
 
-    rabbitmqClient := messagebroker.NewRabbitmqClient(config)
-    messageBroker := messagebroker.MessageBroker{client: rabbitmqClient}
+    rabbitmqClient := rabbitmq.NewRabbitmqClient(config)
+    messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
 
-    // Send multiple messages
-    messages := []string{
-        "First message",
-        "Second message",
-        "Third message",
-    }
-
-    for _, msg := range messages {
-        err := messageBroker.SendMessage("test-queue", []byte(msg))
-        if err != nil {
-            log.Printf("Failed to send message: %v", err)
-            continue
-        }
-        log.Printf("Sent: %s", msg)
-    }
-
-    // Receive messages with timeout
     messagesChan := make(chan []byte)
     errorsChan := make(chan error)
 
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
 
-    // Start receiving messages in a goroutine
-    go messageBroker.ReceiveMessages(ctx, "test-queue", messagesChan, errorsChan)
+    go messageBroker.ReceiveMessages(ctx, "my-queue", messagesChan, errorsChan)
 
-    // Process received messages
     for {
         select {
         case msg := <-messagesChan:
@@ -121,7 +115,7 @@ func main() {
             if err != nil {
                 log.Printf("Error receiving message: %v", err)
             }
-            return // Exit when context is cancelled or error occurs
+            return // clean stop or error
         case <-ctx.Done():
             log.Println("Timeout reached")
             return
@@ -130,73 +124,66 @@ func main() {
 }
 ```
 
-## API Reference
+## API reference
 
-### MessageBroker
+### Service: `messagebroker`
 
-#### `MessageBroker{client Client}`
+#### `MessageBroker{Client: client}`
 
-Creates a new MessageBroker instance with the provided client.
+Builds a `MessageBroker` around an injected `Client`. There is no constructor function — set the `Client` field directly.
 
 #### `SendMessage(queueName string, message []byte) error`
 
-Sends a message to the specified queue.
-
-**Parameters:**
-
-- `queueName`: The name of the queue to send the message to
-- `message`: The message content as bytes
-
-**Returns:** Error if the operation fails
+Sends `message` to `queueName`. Returns an error if the operation fails.
 
 #### `ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error)`
 
-Continuously receives messages from the specified queue.
+Continuously receives from `queueName`, writing message bodies to `messages` and errors to `errors`. Cancel `ctx` to stop; a `nil` on `errors` marks a clean stop.
 
-**Parameters:**
-
-- `ctx`: Context for cancellation
-- `queueName`: The name of the queue to receive messages from
-- `messages`: Channel to receive message content
-- `errors`: Channel to receive errors
-
-### RabbitmqClient
+### Driver: `rabbitmq` (`infra/rabbitmq`)
 
 #### `NewRabbitmqClient(rabbitmqConfig *rabbitmqconfig.Config) RabbitmqClient`
 
-Creates a new RabbitmqClient instance with the provided configuration.
+Creates a `RabbitmqClient` wired to a real broker connection (it injects the production dial function). The driver opens a fresh connection and channel per operation.
 
-#### `SendMessage(queueName string, message []byte) error`
+#### `SendMessage` / `ReceiveMessages`
 
-Sends a message to the specified queue in RabbitMQ.
+Same signatures as the service methods; these perform the actual RabbitMQ work described below.
 
-**Features:**
+> The driver is built around small `AMQPConnection` / `AMQPChannel` interfaces plus an injectable `DialFunc`. Production code uses the real dialer; unit tests build a `RabbitmqClient` with a fake dialer to avoid touching a real server.
 
-- Automatic queue declaration
-- Persistent message delivery
-- Default exchange routing
+## Behavior
 
-#### `ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error)`
+### Queue declaration
 
-Continuously receives messages from the specified queue.
+Both sending and receiving declare the queue first, so it always exists:
 
-**Features:**
+- **Durable**: `true` — survives server restarts
+- **Auto-delete**: `false` — not deleted when unused
+- **Exclusive**: `false` — usable by multiple connections
+- **No-wait**: `false` — wait for server confirmation
 
-- Automatic queue declaration
-- Quality of service configuration (prefetch count: 1)
-- Context-based cancellation
-- Automatic message acknowledgment
+### Message properties (send)
+
+- **Delivery mode**: `Persistent` — messages survive server restarts
+- **Content type**: `text/plain`
+- **Routing**: published to the default exchange with the queue name as routing key
+
+### Quality of service (receive)
+
+- **Prefetch count**: `1` — one message at a time
+- **Prefetch size**: `0` — no size limit
+- **Global**: `false` — applies to this channel only
+- Messages are auto-acknowledged as they are consumed.
 
 ## Configuration
 
-The RabbitMQ client uses configuration from the `go-types` library. Environment variables are used to configure the connection:
+The RabbitMQ driver reads its configuration from the [`go-types`](https://git.windmaker.net/a-castellano/go-types) library via `rabbitmqconfig.NewConfig()`, which uses these environment variables:
 
-- `RABBITMQ_HOST`: RabbitMQ server hostname or IP address
-- `RABBITMQ_PORT`: RabbitMQ server port (default: 5672)
-- `RABBITMQ_USER`: RabbitMQ username
-- `RABBITMQ_PASSWORD`: RabbitMQ password
-
-### Example Configuration
+- `RABBITMQ_HOST` — server hostname or IP address
+- `RABBITMQ_PORT` — server port (default: `5672`)
+- `RABBITMQ_USER` — username
+- `RABBITMQ_PASSWORD` — password
 
 ```bash
 export RABBITMQ_HOST=localhost
@@ -205,93 +192,39 @@ export RABBITMQ_USER=guest
 export RABBITMQ_PASSWORD=guest
 ```
 
-## Queue Configuration
-
-The service automatically declares queues with the following settings:
-
-- **Durable**: `true` - Queue survives server restarts
-- **Auto-delete**: `false` - Queue is not deleted when unused
-- **Exclusive**: `false` - Queue can be used by multiple connections
-- **No-wait**: `false` - Wait for server confirmation
-
-## Message Properties
-
-Messages are sent with the following properties:
-
-- **Delivery Mode**: `Persistent` - Messages survive server restarts
-- **Content Type**: `text/plain` - Plain text content
-- **Body**: User-provided message content
-
-## Quality of Service
-
-The consumer is configured with the following QoS settings:
-
-- **Prefetch Count**: `1` - Process one message at a time
-- **Prefetch Size**: `0` - No size limit
-- **Global**: `false` - Apply to this channel only
-
 ## Testing
 
-The service includes comprehensive unit and integration tests. Unit tests use mocked RabbitMQ clients, while integration tests require a real RabbitMQ server.
-
-### Running Tests
+Unit tests use a fake dialer (no broker needed); integration tests require a real RabbitMQ server. Run them with `make` (see the [development guide](../../Readme.md#development) for the container setup):
 
 ```bash
-# Run unit tests only
-make test_messagebroker_unit
+# MessageBroker service tests
+make test_messagebroker_unit    # unit only
 
-# Run integration tests (requires RabbitMQ server)
-make test_messagebroker
-
-# Run all tests
-make test
+# RabbitMQ driver tests
+make test_rabbitmq_unit         # unit only
+make test_rabbitmq              # unit + integration
 ```
 
-### Integration Testing
-
-For integration tests, you need a RabbitMQ server running. You can use the provided Docker Compose setup:
+Integration tests use hardcoded IP addresses (RabbitMQ at `172.17.0.30`) to stay consistent across environments. Start the server from the development Compose file and run:
 
 ```bash
-docker-compose -f development/docker-compose.yml up -d rabbitmq
-```
-
-**Important Note**: The integration tests use hardcoded IP addresses to ensure consistent behavior across different environments. The Docker Compose configuration uses the same IP range (`172.17.0.0/16`) to avoid network conflicts and ensure tests run reliably.
-
-Then run the integration tests:
-
-```bash
+podman-compose -f development/docker-compose.yml up -d rabbitmq
 RABBITMQ_HOST=localhost RABBITMQ_PORT=5672 RABBITMQ_USER=guest RABBITMQ_PASSWORD=guest make test_integration
 ```
 
-## Error Handling
+## Error handling
 
-The service provides detailed error messages for different failure scenarios:
+The driver surfaces errors for the common failure modes:
 
-- **Connection failures**: Network issues, invalid host/port
-- **Authentication failures**: Invalid username/password
-- **Queue declaration failures**: Permission issues, invalid queue settings
-- **Message publishing failures**: Queue doesn't exist, server errors
+- **Connection failures** — wrong host/port, server unreachable
+- **Authentication failures** — invalid username/password
+- **Queue declaration failures** — permission issues or incompatible queue settings
+- **Publishing failures** — server errors while publishing
 
-### Common Error Scenarios
-
-```go
-// Connection failure
-if err := amqp.Dial(connectionString); err != nil {
-    return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
-}
-
-// Authentication failure
-if err.Error() == "Exception (403) Reason: \"username or password not allowed\"" {
-    return fmt.Errorf("authentication failed: %w", err)
-}
-
-// Queue declaration failure
-if err := channel.QueueDeclare(...); err != nil {
-    return fmt.Errorf("failed to declare queue: %w", err)
-}
-```
+On `SendMessage` these are returned directly. On `ReceiveMessages` they are delivered through the `errors` channel.
 
 ## Dependencies
 
-- [go-types](https://git.windmaker.net/a-castellano/go-types) - Configuration types
-- [amqp091-go](https://github.com/rabbitmq/amqp091-go) - RabbitMQ client library
+- [go-types](https://git.windmaker.net/a-castellano/go-types) — configuration types
+- [amqp091-go](https://github.com/rabbitmq/amqp091-go) — RabbitMQ client library
+</content>
