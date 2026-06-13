@@ -169,7 +169,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 
 func TestFailedWriteWithMock(t *testing.T) {
 	db, mock := redismock.NewClientMock()
-	mock.Regexp().ExpectSet(`[a-z]+`, `[a-z]+`, 30*time.Second).SetErr(errors.New("Mocked Fail"))
+	mock.Regexp().ExpectSet(`[a-z]+`, `[a-z]+`, 30*time.Second).SetErr(errors.New("Mocked write fail"))
 	config := redisconfig.Config{}
 	client := RedisClient{config: &config, client: db, clientInitiated: true}
 
@@ -178,9 +178,28 @@ func TestFailedWriteWithMock(t *testing.T) {
 	if writeErr == nil {
 		t.Errorf("WriteString with mocked client that will error in write should fail too.")
 	} else {
-		expectedError := "Mocked Fail"
+		expectedError := "Mocked write fail"
 		if writeErr.Error() != expectedError {
 			t.Fatalf("Expected error '%s' but got '%s'", expectedError, writeErr.Error())
+		}
+
+	}
+}
+
+func TestFailedReadWithMock(t *testing.T) {
+	db, mock := redismock.NewClientMock()
+	mock.Regexp().ExpectGet(`[a-z]+`).SetErr(errors.New("Mocked read fail"))
+	config := redisconfig.Config{}
+	client := RedisClient{config: &config, client: db, clientInitiated: true}
+
+	ctx := context.Background()
+	_, _, readErr := client.ReadString(ctx, "testkey")
+	if readErr == nil {
+		t.Errorf("WriteString with mocked client that will error in read should fail too.")
+	} else {
+		expectedError := "Mocked read fail"
+		if readErr.Error() != expectedError {
+			t.Fatalf("Expected error '%s' but got '%s'", expectedError, readErr.Error())
 		}
 
 	}
