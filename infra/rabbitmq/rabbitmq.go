@@ -166,8 +166,8 @@ func (client RabbitmqClient) SendMessage(queueName string, message []byte) error
 
 		"",         // exchange - empty string for default exchange
 		queue.Name, // routing key - queue name
-		false,      // mandatory - don't require immediate delivery
-		false,      // immediate - don't require immediate delivery
+		false,      // mandatory - don't require the message to be routable to a queue
+		false,      // immediate - don't require immediate delivery to a consumer
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent, // Make message persistent
 			ContentType:  "text/plain",    // Set content type

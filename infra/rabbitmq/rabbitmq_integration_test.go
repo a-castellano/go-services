@@ -63,10 +63,10 @@ func setUp() {
 		currentPasswordDefined = false
 	}
 
-	// Clear all RabbitMQ environment variables for clean test state
+	// Clear all RabbitMQ environment variables for a clean test state
 	os.Unsetenv("RABBITMQ_HOST")
 	os.Unsetenv("RABBITMQ_PORT")
-	os.Unsetenv("RABBITMQ_DATABASE")
+	os.Unsetenv("RABBITMQ_USER")
 	os.Unsetenv("RABBITMQ_PASSWORD")
 
 }

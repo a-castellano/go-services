@@ -32,7 +32,7 @@ type fakeConnection struct {
 	deliveries       []amqp.Delivery
 }
 
-// Close can simulate failures
+// Close returns an error when failClose is set, otherwise nil.
 func (f *fakeConnection) Close() error {
 	if f.failClose {
 		return errors.New("Fatal error closing connection")
@@ -57,7 +57,9 @@ func (f *fakeConnection) Channel() (AMQPChannel, error) {
 	}, nil
 }
 
-// fakeChannel satisfies AMQPChannel interface.
+// fakeChannel satisfies the AMQPChannel interface without touching a real
+// broker. Each fail* flag lets a test force the corresponding method to error,
+// and deliveries holds the messages Consume() emits.
 type fakeChannel struct {
 	failClose        bool
 	failQueueDeclare bool
@@ -67,7 +69,7 @@ type fakeChannel struct {
 	deliveries       []amqp.Delivery
 }
 
-// Close can simulate failures
+// Close returns an error when failClose is set, otherwise nil.
 func (f *fakeChannel) Close() error {
 	if f.failClose {
 		return errors.New("Fatal error closing channel")
@@ -76,7 +78,8 @@ func (f *fakeChannel) Close() error {
 	}
 }
 
-// QueueDeclare is a stub that returns a dummy queue and no error.
+// QueueDeclare returns an error when failQueueDeclare is set, otherwise a queue
+// named after the request.
 func (f *fakeChannel) QueueDeclare(name string, durable, autoDelete, exclusive, noWait bool, args amqp.Table) (amqp.Queue, error) {
 	if f.failQueueDeclare {
 		return amqp.Queue{}, errors.New("Fatal error declaring queue")
@@ -85,7 +88,7 @@ func (f *fakeChannel) QueueDeclare(name string, durable, autoDelete, exclusive, 
 	}
 }
 
-// Publish is a stub that mocks publishing errors.
+// Publish returns an error when failPublish is set, otherwise nil.
 func (f *fakeChannel) Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error {
 	if f.failPublish {
 		return errors.New("Fatal error publishing message")
@@ -94,7 +97,7 @@ func (f *fakeChannel) Publish(exchange, key string, mandatory, immediate bool, m
 	}
 }
 
-// Qos is a stub that mocks erors.
+// Qos returns an error when failQos is set, otherwise nil.
 func (f *fakeChannel) Qos(prefetchCount, prefetchSize int, global bool) error {
 	if f.failQos {
 		return errors.New("Fatal error setting QoS")
@@ -149,7 +152,7 @@ func TestSendMessageFailDial(t *testing.T) {
 	err := client.SendMessage("test-queue", []byte("test message"))
 
 	if err == nil {
-		t.Fatal("Dial mocks a fail but SendMessage did not return an error")
+		t.Fatal("dial was mocked to fail but SendMessage did not return an error")
 	}
 	expectedError := "Fatal error: dial failed"
 	if err.Error() != expectedError {
@@ -170,7 +173,7 @@ func TestSendMessageFailConnChannel(t *testing.T) {
 	err := client.SendMessage("test-queue", []byte("test message"))
 
 	if err == nil {
-		t.Fatal("Channel creation mocks a fail but SendMessage did not return an error")
+		t.Fatal("channel creation was mocked to fail but SendMessage did not return an error")
 	}
 	expectedError := "Fatal error opening channel"
 	if err.Error() != expectedError {
@@ -179,7 +182,7 @@ func TestSendMessageFailConnChannel(t *testing.T) {
 
 }
 
-// TestSendMessageFailQueueDeclare verifies that when queue is declared and it fails
+// TestSendMessageFailQueueDeclare verifies that when declaring the queue fails,
 // SendMessage surfaces that error and does not proceed to publish.
 func TestSendMessageFailQueueDeclare(t *testing.T) {
 
@@ -191,7 +194,7 @@ func TestSendMessageFailQueueDeclare(t *testing.T) {
 	err := client.SendMessage("test-queue", []byte("test message"))
 
 	if err == nil {
-		t.Fatal("Queue declaring mocks a fail but SendMessage did not return an error")
+		t.Fatal("queue declaration was mocked to fail but SendMessage did not return an error")
 	}
 	expectedError := "Fatal error declaring queue"
 	if err.Error() != expectedError {
@@ -212,7 +215,7 @@ func TestSendMessageFailChannelPublish(t *testing.T) {
 	err := client.SendMessage("test-queue", []byte("test message"))
 
 	if err == nil {
-		t.Fatal("Publish mocks a fail but SendMessage did not return an error")
+		t.Fatal("publish was mocked to fail but SendMessage did not return an error")
 	}
 	expectedError := "Fatal error publishing message"
 	if err.Error() != expectedError {
@@ -241,7 +244,7 @@ func TestReceiveMessagesFailDial(t *testing.T) {
 	select {
 	case err := <-errorsChan:
 		if err == nil {
-			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+			t.Errorf("dial was mocked to fail but ReceiveMessages did not send an error")
 		} else {
 			expectedError := "Fatal error: dial failed"
 			if err.Error() != expectedError {
@@ -249,12 +252,12 @@ func TestReceiveMessagesFailDial(t *testing.T) {
 			}
 		}
 	case <-time.After(5 * time.Second):
-		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+		t.Errorf("ReceiveMessages with a failing dial should send an error within 5 seconds")
 	}
 }
 
-// TestReceiveMessagesFailConnChannel verifies that when mocked client fail creating a channel , ReceiveMessages
-// surfaces that error and does not proceed.
+// TestReceiveMessagesFailConnChannel verifies that when opening the channel fails,
+// ReceiveMessages surfaces that error and does not proceed.
 func TestReceiveMessagesFailConnChannel(t *testing.T) {
 
 	rabbitmqConfig := rabbitmqconfig.Config{}
@@ -274,7 +277,7 @@ func TestReceiveMessagesFailConnChannel(t *testing.T) {
 	select {
 	case err := <-errorsChan:
 		if err == nil {
-			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+			t.Errorf("channel creation was mocked to fail but ReceiveMessages did not send an error")
 		} else {
 			expectedError := "Fatal error opening channel"
 			if err.Error() != expectedError {
@@ -282,12 +285,12 @@ func TestReceiveMessagesFailConnChannel(t *testing.T) {
 			}
 		}
 	case <-time.After(5 * time.Second):
-		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+		t.Errorf("ReceiveMessages with a failing channel creation should send an error within 5 seconds")
 	}
 }
 
-// TestReceiveMessagesQueueDeclare verifies that when mocked client fail declaring a queue , ReceiveMessages
-// surfaces that error and does not proceed.
+// TestReceiveMessagesFailQueueDeclare verifies that when declaring the queue fails,
+// ReceiveMessages surfaces that error and does not proceed.
 func TestReceiveMessagesFailQueueDeclare(t *testing.T) {
 
 	rabbitmqConfig := rabbitmqconfig.Config{}
@@ -307,7 +310,7 @@ func TestReceiveMessagesFailQueueDeclare(t *testing.T) {
 	select {
 	case err := <-errorsChan:
 		if err == nil {
-			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+			t.Errorf("queue declaration was mocked to fail but ReceiveMessages did not send an error")
 		} else {
 			expectedError := "Fatal error declaring queue"
 			if err.Error() != expectedError {
@@ -315,12 +318,12 @@ func TestReceiveMessagesFailQueueDeclare(t *testing.T) {
 			}
 		}
 	case <-time.After(5 * time.Second):
-		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+		t.Errorf("ReceiveMessages with a failing queue declaration should send an error within 5 seconds")
 	}
 }
 
-// TestReceiveMessagesFailChannelQos verifies that when mocked client fails definnign channel QOS , ReceiveMessages
-// surfaces that error and does not proceed.
+// TestReceiveMessagesFailChannelQos verifies that when setting the channel QoS fails,
+// ReceiveMessages surfaces that error and does not proceed.
 func TestReceiveMessagesFailChannelQos(t *testing.T) {
 
 	rabbitmqConfig := rabbitmqconfig.Config{}
@@ -340,7 +343,7 @@ func TestReceiveMessagesFailChannelQos(t *testing.T) {
 	select {
 	case err := <-errorsChan:
 		if err == nil {
-			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+			t.Errorf("QoS setup was mocked to fail but ReceiveMessages did not send an error")
 		} else {
 			expectedError := "Fatal error setting QoS"
 			if err.Error() != expectedError {
@@ -348,13 +351,13 @@ func TestReceiveMessagesFailChannelQos(t *testing.T) {
 			}
 		}
 	case <-time.After(5 * time.Second):
-		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+		t.Errorf("ReceiveMessages with a failing QoS setup should send an error within 5 seconds")
 	}
 }
 
-// TestReceiveMessagesFailConsme verifies that when mocked client fails consuming messages , ReceiveMessages
-// surfaces that error and does not proceed.
-func TestReceiveMessagesFailConsme(t *testing.T) {
+// TestReceiveMessagesFailConsume verifies that when consuming messages fails,
+// ReceiveMessages surfaces that error and does not proceed.
+func TestReceiveMessagesFailConsume(t *testing.T) {
 
 	rabbitmqConfig := rabbitmqconfig.Config{}
 
@@ -373,7 +376,7 @@ func TestReceiveMessagesFailConsme(t *testing.T) {
 	select {
 	case err := <-errorsChan:
 		if err == nil {
-			t.Errorf("client with failed dial whould fail in ReceiveMessages, ececution should return an error.")
+			t.Errorf("consume was mocked to fail but ReceiveMessages did not send an error")
 		} else {
 			expectedError := "Fatal error consuming messages"
 			if err.Error() != expectedError {
@@ -381,6 +384,6 @@ func TestReceiveMessagesFailConsme(t *testing.T) {
 			}
 		}
 	case <-time.After(5 * time.Second):
-		t.Errorf("ReceiveMessages with failing dial mock should return an error within 5 seconds.")
+		t.Errorf("ReceiveMessages with a failing consume should send an error within 5 seconds")
 	}
 }
