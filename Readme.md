@@ -4,23 +4,32 @@
 
 This repository stores reusable services used by many of my projects. The aim is to save time and reduce code duplication by unifying common functionality in a single source.
 
-## Overview
+## Architecture
 
-The go-services library provides high-level abstractions for common infrastructure services like memory databases and message brokers. It follows the dependency injection pattern, allowing you to easily swap implementations and test your code with mocks.
+The library is split into two layers that follow the dependency injection pattern:
 
-## Available Services
+- **`services/`** — high-level service abstractions. Each service defines a `Client` interface and delegates the actual work to whatever implementation you inject. This is what your application code depends on, which keeps it decoupled and easy to test with mocks.
+- **`infra/`** — standalone backend clients (for example, a Redis driver or a RabbitMQ driver). They are kept separate from the services because they are reusable on their own: a driver happens to satisfy a given service's `Client` interface, but it can be used directly or back any other service whose interface it satisfies. Swap drivers without touching the code that uses the service.
 
-### MemoryDatabase
+To use a service you pick a driver from `infra/`, build it, and inject it into the matching service.
 
-A service for managing interactions with memory databases. Currently supports Redis as the primary implementation.
+## Services
 
-**Location:** [MemoryDatabase](/memorydatabase)
+| Service | Description | Documentation |
+|---------|-------------|---------------|
+| **MemoryDatabase** | Key-value storage with TTL support over a memory database. | [services/memorydatabase](services/memorydatabase/Readme.md) |
+| **MessageBroker** | Asynchronous messaging with persistent delivery over a message broker. | [services/messagebroker](services/messagebroker/Readme.md) |
 
-### MessageBroker
+Each service README documents its interface, the matching driver, a complete wired example, configuration, and testing.
 
-A service for managing interactions with message broker services. Currently supports RabbitMQ as the primary implementation.
+## Drivers
 
-**Location:** [MessageBroker](/messagebroker)
+The `infra/` packages are standalone backend clients, kept separate from the services on purpose: each one happens to satisfy a service `Client` interface today, but it is reusable on its own and can back any other service whose interface it satisfies. Use a driver injected into a service, or directly on its own.
+
+| Driver | Backend | Satisfies | Documentation |
+|--------|---------|-----------|---------------|
+| **RedisClient** | Redis / Valkey | `memorydatabase.Client` | [infra/redis](infra/redis/Readme.md) |
+| **RabbitmqClient** | RabbitMQ | `messagebroker.Client` | [infra/rabbitmq](infra/rabbitmq/Readme.md) |
 
 ## Installation
 
@@ -28,110 +37,11 @@ A service for managing interactions with message broker services. Currently supp
 go get github.com/a-castellano/go-services
 ```
 
-## Quick Start
-
-### Using MemoryDatabase with Redis
-
-```go
-package main
-
-import (
-    "context"
-    "log"
-
-    "github.com/a-castellano/go-services/memorydatabase"
-    redisconfig "github.com/a-castellano/go-types/redis"
-)
-
-func main() {
-    // Create Redis configuration
-    config, err := redisconfig.NewConfig()
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Create and initialize Redis client
-    redisClient := memorydatabase.NewRedisClient(config)
-    ctx := context.Background()
-
-    if err := redisClient.Initiate(ctx); err != nil {
-        log.Fatal(err)
-    }
-
-    // Create MemoryDatabase instance
-    memoryDB := memorydatabase.NewMemoryDatabase(&redisClient)
-
-    // Write a value with TTL
-    err = memoryDB.WriteString(ctx, "my-key", "my-value", 3600) // 1 hour TTL
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Read the value
-    value, found, err := memoryDB.ReadString(ctx, "my-key")
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    if found {
-        log.Printf("Value: %s", value)
-    }
-}
-```
-
-### Using MessageBroker with RabbitMQ
-
-```go
-package main
-
-import (
-    "context"
-    "log"
-    "time"
-
-    "github.com/a-castellano/go-services/messagebroker"
-    rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
-)
-
-func main() {
-    // Create RabbitMQ configuration
-    config, err := rabbitmqconfig.NewConfig()
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Create RabbitMQ client and MessageBroker
-    rabbitmqClient := messagebroker.NewRabbitmqClient(config)
-    messageBroker := messagebroker.MessageBroker{client: rabbitmqClient}
-
-    // Send a message
-    err = messageBroker.SendMessage("my-queue", []byte("Hello, World!"))
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Receive messages
-    messages := make(chan []byte)
-    errors := make(chan error)
-    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-    defer cancel()
-
-    go messageBroker.ReceiveMessages(ctx, "my-queue", messages, errors)
-
-    select {
-    case msg := <-messages:
-        log.Printf("Received: %s", string(msg))
-    case err := <-errors:
-        log.Printf("Error: %v", err)
-    case <-ctx.Done():
-        log.Println("Timeout")
-    }
-}
-```
-
 ## Development
 
-### Setting up the Development Environment
+Go is not installed locally — all Go tasks run inside a Podman container using the same image as CI.
+
+### Setting up the development environment
 
 1. Clone the repository:
 
@@ -140,102 +50,19 @@ git clone https://git.windmaker.net/a-castellano/go-services.git
 cd go-services
 ```
 
-2. Start the development environment:
+2. Start all services and the Go container with `podman-compose`:
 
 ```bash
 podman-compose -f development/docker-compose.yml up -d
 ```
 
-This will start:
+This starts:
 
 - A Go development container
 - A Valkey (Redis-compatible) server at `172.17.0.2`
 - A RabbitMQ server at `172.17.0.30`
 
-**Note**: The Docker Compose configuration uses hardcoded IP addresses (`172.17.0.0/16` subnet) to match the integration tests and ensure consistent behavior across different environments.
-
-### Running Tests
-
-The project includes comprehensive unit and integration tests:
-
-```bash
-# Run all unit tests
-make test
-
-# Run all integration tests (requires running services)
-make test_integration
-
-# Run tests for specific services
-make test_memorydatabase
-make test_messagebroker
-
-# Run tests with race detection
-make race
-
-# Generate coverage report
-make coverage
-```
-
-### Available Make Targets
-
-- `make help` - Show all available targets
-- `make lint` - Run code linting
-- `make test` - Run unit tests
-- `make test_integration` - Run integration tests
-- `make coverage` - Generate coverage report
-- `make coverhtml` - Generate HTML coverage report
-- `make race` - Run tests with race detection
-- `make msan` - Run tests with memory sanitizer
-
-### Environment Variables
-
-#### For MemoryDatabase (Redis)
-
-- `REDIS_HOST` - Redis server hostname or IP
-- `REDIS_PORT` - Redis server port (default: 6379)
-- `REDIS_PASSWORD` - Redis server password (optional)
-- `REDIS_DATABASE` - Redis database number (default: 0)
-
-#### For MessageBroker (RabbitMQ)
-
-- `RABBITMQ_HOST` - RabbitMQ server hostname or IP
-- `RABBITMQ_PORT` - RabbitMQ server port (default: 5672)
-- `RABBITMQ_USER` - RabbitMQ username
-- `RABBITMQ_PASSWORD` - RabbitMQ password
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Dependencies
-
-- [go-types](https://git.windmaker.net/a-castellano/go-types) - Configuration types
-- [go-redis](https://github.com/redis/go-redis) - Redis client
-- [amqp091-go](https://github.com/rabbitmq/amqp091-go) - RabbitMQ client
-- [redismock](https://github.com/go-redis/redismock) - Redis mocking for tests
-
-## Local Development
-
-Go is not installed locally — all Go tasks run inside a Podman container using the same image as CI.
-
-### Running tests with services
-
-The Go module cache is persisted in `development/gomodcache/` on the host and mounted into the container, so dependencies are not downloaded each time the development environment is deployed.
-
-Start all services and the Go container using `podman-compose`:
-
-```bash
-podman-compose -f development/docker-compose.yml up -d
-```
-
-Then exec into the Go container to run any make target:
-
-```bash
-podman exec -it development_golang_1 make test_messagebroker
-podman exec -it development_golang_1 make test_memorydatabase
-podman exec -it development_golang_1 make test_redis
-podman exec -it development_golang_1 make coverage
-```
+> **Note**: The Compose configuration uses hardcoded IP addresses (`172.17.0.0/16` subnet) to match the integration tests and ensure consistent behavior across environments. The Go module cache is persisted in `development/gomodcache/` on the host and mounted into the container, so dependencies are not downloaded on every run.
 
 To stop and remove the containers when done:
 
@@ -243,12 +70,46 @@ To stop and remove the containers when done:
 podman-compose -f development/docker-compose.yml down
 ```
 
-### Interactive shell
+### Running tests
 
-To get an interactive shell inside the Go container (with access to all services):
+Exec into the Go container and run any `make` target:
 
 ```bash
-podman exec -it development_golang_1 /bin/bash
+podman exec -it development_golang_1 make test          # all unit tests
+podman exec -it development_golang_1 make test_integration  # integration tests (need running services)
+podman exec -it development_golang_1 make coverage      # coverage report
 ```
 
-> **Note**: The container name (`development_golang_1`) may vary. Use `podman ps` to confirm the actual name.
+> **Note**: The container name (`development_golang_1`) may vary. Use `podman ps` to confirm the actual name. For an interactive shell, run `podman exec -it development_golang_1 /bin/bash`.
+
+### Available make targets
+
+| Target | Description |
+|--------|-------------|
+| `make help` | Show all available targets |
+| `make lint` | Lint sources with `go vet` |
+| `make test` | Run unit tests |
+| `make test_integration` | Run integration tests (requires running services) |
+| `make test_memorydatabase` | Run all MemoryDatabase tests |
+| `make test_messagebroker_unit` | Run MessageBroker unit tests |
+| `make test_redis` | Run all Redis driver tests |
+| `make test_rabbitmq` | Run all RabbitMQ driver tests |
+| `make race` | Run tests with the data race detector |
+| `make msan` | Run tests with the memory sanitizer |
+| `make coverage` | Generate the coverage report |
+| `make coverhtml` | Generate the HTML coverage report |
+
+Each service README lists the test targets scoped to that service.
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## Dependencies
+
+- [go-types](https://git.windmaker.net/a-castellano/go-types) — configuration types
+- [go-redis](https://github.com/redis/go-redis) — Redis client
+- [amqp091-go](https://github.com/rabbitmq/amqp091-go) — RabbitMQ client
+- [redismock](https://github.com/go-redis/redismock) — Redis mocking for tests
+</content>
+</invoke>

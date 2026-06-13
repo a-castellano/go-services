@@ -1,21 +1,21 @@
 # MemoryDatabase
 
-This service manages interactions with memory databases. Currently supports Redis as the primary memory database implementation.
+This service manages interactions with memory databases. It exposes a small, driver-agnostic interface for key-value operations with TTL support. The driver bundled in this repository is Redis/Valkey ([infra/redis](../../infra/redis/Readme.md)); any client that satisfies the `Client` interface works.
 
 ## Overview
 
-The MemoryDatabase service provides a high-level abstraction for memory database operations. It uses a Client interface pattern, allowing you to easily swap implementations and test your code with mocks. The service currently supports Redis through the `RedisClient` implementation.
+`MemoryDatabase` is a high-level abstraction that delegates every operation to a `Client` implementation. Your application depends on `MemoryDatabase` (and the `Client` interface), not on a concrete database, which keeps your code decoupled and easy to test with mocks. The repository ships a Redis driver (`redis.RedisClient`) that satisfies the interface.
 
 ## Features
 
 - **High-level interface** for key-value operations
 - **TTL support** for automatic expiration of stored values
+- **Pluggable drivers** through the `Client` interface
+- **Initialization guard** — operations fail fast if the driver was not initiated
 
-## Usage
+## Client interface
 
-MemoryDatabase requires a Client interface for being used. This library offers Redis as a Client implementation.
-
-### Client Interface
+A `MemoryDatabase` needs a value that implements this interface:
 
 ```go
 type Client interface {
@@ -25,7 +25,16 @@ type Client interface {
 }
 ```
 
-### Basic Example
+The Redis driver in [infra/redis](../../infra/redis/Readme.md) implements it.
+
+## Usage
+
+Import the service and the driver:
+
+- Service: `github.com/a-castellano/go-services/services/memorydatabase`
+- Redis driver: `github.com/a-castellano/go-services/infra/redis`
+
+### Basic example
 
 ```go
 package main
@@ -33,43 +42,39 @@ package main
 import (
     "context"
     "log"
-    "os"
 
-    "github.com/a-castellano/go-services/memorydatabase"
+    "github.com/a-castellano/go-services/infra/redis"
+    "github.com/a-castellano/go-services/services/memorydatabase"
     redisconfig "github.com/a-castellano/go-types/redis"
 )
 
 func main() {
-    // Create Redis configuration from environment variables
+    // Build the Redis configuration from environment variables.
     config, err := redisconfig.NewConfig()
     if err != nil {
         log.Fatal(err)
     }
 
-    // Create Redis client
-    redisClient := memorydatabase.NewRedisClient(config)
-
-    // Initialize the client (establishes connection and validates it)
+    // Build the Redis driver and initialize it (connects and pings the server).
+    redisClient := redis.NewRedisClient(config)
     ctx := context.Background()
     if err := redisClient.Initiate(ctx); err != nil {
         log.Fatal(err)
     }
 
-    // Create MemoryDatabase instance with the Redis client
+    // Inject the driver into the service.
     memoryDatabase := memorydatabase.NewMemoryDatabase(&redisClient)
 
-    // Write a value with TTL (time-to-live in seconds)
-    err = memoryDatabase.WriteString(ctx, "user:123", "John Doe", 3600) // 1 hour TTL
-    if err != nil {
+    // Write a value with a 1 hour TTL.
+    if err := memoryDatabase.WriteString(ctx, "user:123", "John Doe", 3600); err != nil {
         log.Fatal(err)
     }
 
-    // Read the value
+    // Read it back.
     value, found, err := memoryDatabase.ReadString(ctx, "user:123")
     if err != nil {
         log.Fatal(err)
     }
-
     if found {
         log.Printf("User: %s", value)
     } else {
@@ -78,80 +83,50 @@ func main() {
 }
 ```
 
-## API Reference
+> `NewMemoryDatabase` takes a `Client`. Pass the driver by pointer (`&redisClient`) because its methods have pointer receivers.
 
-### MemoryDatabase
+## API reference
+
+### Service: `memorydatabase`
 
 #### `NewMemoryDatabase(client Client) MemoryDatabase`
 
-Creates a new MemoryDatabase instance with the provided client.
+Creates a new `MemoryDatabase` backed by the provided client.
 
 #### `WriteString(ctx context.Context, key string, value string, ttl int) error`
 
-Writes a string value to the memory database with the specified TTL (time-to-live in seconds).
-
-**Parameters:**
-
-- `ctx`: Context for the operation
-- `key`: The key to store the value under
-- `value`: The string value to store
-- `ttl`: Time-to-live in seconds (0 for no expiration)
-
-**Returns:** Error if the operation fails
+Writes a string value with the given TTL (seconds; `0` means no expiration). Returns an error if the client is not initiated or the write fails.
 
 #### `ReadString(ctx context.Context, key string) (string, bool, error)`
 
-Reads a string value from the memory database by key.
+Reads a string value by key. Returns the value, a boolean that is `true` when the key was found, and an error. A missing key is reported with `found == false` and a `nil` error.
 
-**Parameters:**
-
-- `ctx`: Context for the operation
-- `key`: The key to read
-
-**Returns:**
-
-- `string`: The value (empty if not found)
-- `bool`: True if the key was found
-- `error`: Error if the operation fails
-
-### RedisClient
+### Driver: `redis` (`infra/redis`)
 
 #### `NewRedisClient(redisConfig *redisconfig.Config) RedisClient`
 
-Creates a new RedisClient instance with the provided configuration.
+Creates a `RedisClient`. The connection is **not** opened yet — call `Initiate` first.
 
 #### `Initiate(ctx context.Context) error`
 
-Establishes a connection to the Redis server and validates it with a ping.
-
-**Parameters:**
-
-- `ctx`: Context for the operation
-
-**Returns:** Error if connection fails
+Opens the connection and validates it with a ping. Accepts both IP addresses and domain names for the host (domain names are resolved to an IP). Must be called before any read/write.
 
 #### `IsClientInitiated() bool`
 
-Returns true if the Redis client has been successfully initialized.
+Returns `true` once `Initiate` has succeeded.
 
-#### `WriteString(ctx context.Context, key string, value string, ttl int) error`
+#### `WriteString` / `ReadString`
 
-Stores a string value in Redis with the specified TTL.
-
-#### `ReadString(ctx context.Context, key string) (string, bool, error)`
-
-Retrieves a string value from Redis by key.
+Same signatures as the service methods; these perform the actual Redis operations.
 
 ## Configuration
 
-The Redis client uses configuration from the `go-types` library. Environment variables are used to configure the connection:
+The Redis driver reads its configuration from the [`go-types`](https://git.windmaker.net/a-castellano/go-types) library via `redisconfig.NewConfig()`, which uses these environment variables:
 
-- `REDIS_HOST`: Redis server hostname or IP address
-- `REDIS_PORT`: Redis server port (default: 6379)
-- `REDIS_PASSWORD`: Redis server password (optional)
-- `REDIS_DATABASE`: Redis database number (default: 0)
-
-### Example Configuration
+- `REDIS_HOST` — Redis/Valkey server hostname or IP address
+- `REDIS_PORT` — server port (default: `6379`)
+- `REDIS_PASSWORD` — server password (optional)
+- `REDIS_DATABASE` — database number (default: `0`)
 
 ```bash
 export REDIS_HOST=localhost
@@ -162,67 +137,39 @@ export REDIS_DATABASE=0
 
 ## Testing
 
-The service includes comprehensive unit and integration tests. Unit tests use mocked Redis clients, while integration tests require a real Redis server.
-
-### Running Tests
+Unit tests use a mocked Redis client; integration tests require a real Redis/Valkey server. Run them with `make` (see the [development guide](../../Readme.md#development) for the container setup):
 
 ```bash
-# Run unit tests only
-make test_memorydatabase_unit
+# MemoryDatabase service tests
+make test_memorydatabase_unit   # unit only
+make test_memorydatabase        # unit + integration
 
-# Run integration tests (requires Redis server)
-make test_memorydatabase
-
-# Run all tests
-make test
+# Redis driver tests
+make test_redis_unit            # unit only
+make test_redis                 # unit + integration
 ```
 
-### Integration Testing
-
-For integration tests, you need a Redis server running. You can use the provided Docker Compose setup:
+Integration tests use hardcoded IP addresses (Valkey at `172.17.0.2`) to stay consistent across environments. Start the server from the development Compose file and run:
 
 ```bash
-docker-compose -f development/docker-compose.yml up -d valkey
-```
-
-**Important Note**: The integration tests use hardcoded IP addresses (`172.17.0.2`) to ensure consistent behavior across different environments. The Docker Compose configuration uses the same IP range (`172.17.0.0/16`) to avoid network conflicts and ensure tests run reliably.
-
-Then run the integration tests:
-
-```bash
+podman-compose -f development/docker-compose.yml up -d valkey
 REDIS_HOST=localhost REDIS_PORT=6379 make test_integration
 ```
 
-## Error Handling
+## Error handling
 
-The service provides detailed error messages for different failure scenarios:
+The service and driver return descriptive errors for the common failure modes:
 
-- **Connection failures**: Network issues, invalid host/port
-- **Authentication failures**: Invalid password
-- **Operation failures**: Redis server errors
-- **Initialization failures**: Client not properly initialized
+- **Client not initiated** — calling an operation before `Initiate` (or on a service whose driver was never initiated)
+- **Connection failures** — wrong host/port, server unreachable
+- **Authentication failures** — invalid password
+- **Operation failures** — errors returned by the Redis server
 
-### Common Error Scenarios
-
-```go
-// Client not initialized
-if !redisClient.IsClientInitiated() {
-    return errors.New("client is not initiated, cannot perform operation")
-}
-
-// Connection failure
-if err := redisClient.Initiate(ctx); err != nil {
-    return fmt.Errorf("failed to connect to Redis: %w", err)
-}
-
-// Key not found (not an error, but handled specially)
-if err == goredis.Nil {
-    return "", false, nil // Key doesn't exist
-}
-```
+A missing key on `ReadString` is **not** an error: it returns `("", false, nil)`.
 
 ## Dependencies
 
-- [go-types](https://git.windmaker.net/a-castellano/go-types) - Configuration types
-- [go-redis](https://github.com/redis/go-redis) - Redis client library
-- [redismock](https://github.com/go-redis/redismock) - Redis mocking for tests
+- [go-types](https://git.windmaker.net/a-castellano/go-types) — configuration types
+- [go-redis](https://github.com/redis/go-redis) — Redis client library
+- [redismock](https://github.com/go-redis/redismock) — Redis mocking for tests
+</content>
