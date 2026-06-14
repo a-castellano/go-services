@@ -127,6 +127,21 @@ redis_integration_tests:
   script:
     - make test_redis
 
+logger_unit_tests:
+  stage: unit_tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*logger.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  before_script:
+    - export CC=/usr/bin/clang
+    - *install_mod
+  script:
+    - make test_logger_unit
+
 coverage:
   stage: coverage
   rules:
