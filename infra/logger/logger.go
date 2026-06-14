@@ -3,7 +3,9 @@ package logger
 
 import (
 	"context"
+	slogconfig "github.com/a-castellano/go-types/slog"
 	"log/slog"
+	"os"
 )
 
 // Client, the interface contract
@@ -35,4 +37,37 @@ func FromContext(ctx context.Context) Client {
 		return l
 	}
 	return defaultLogger // This cannot be nil. This is why is defined.
+}
+
+type SlogLogger struct {
+	*slog.Logger
+	level        *slog.LevelVar
+	defaultLevel slog.Level
+}
+
+func (s *SlogLogger) SetLevel(l slog.Level) {
+	s.level.Set(l)
+}
+
+func (s *SlogLogger) SetDefaultLevel() {
+	s.level.Set(s.defaultLevel)
+}
+
+func NewSlogLogger(config *slogconfig.Config) *SlogLogger {
+	// Create a new logger with the provided configuration
+	var logger *slog.Logger
+	var programLevel = new(slog.LevelVar)
+	if config.Format == "JSON" {
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: config.AddSource, Level: programLevel})).With(slog.String("app", config.AppName))
+	} else {
+		// format is plain text
+		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: config.AddSource, Level: programLevel})).With(slog.String("app", config.AppName))
+	}
+	programLevel.Set(config.DefaultLevel)
+
+	return &SlogLogger{
+		Logger:       logger,
+		level:        programLevel,
+		defaultLevel: config.DefaultLevel,
+	}
 }
