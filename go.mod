@@ -3,7 +3,7 @@ module github.com/a-castellano/go-services
 go 1.26
 
 require (
-	github.com/a-castellano/go-types v0.0.6
+	github.com/a-castellano/go-types v0.0.7
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/rabbitmq/amqp091-go v1.11.0
 	github.com/redis/go-redis/v9 v9.20.1

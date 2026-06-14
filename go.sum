@@ -2,6 +2,8 @@ github.com/a-castellano/go-types v0.0.4 h1:RXn40I1ojGbITiQdSzIyjl2AXgcSl4cbp0LFl
 github.com/a-castellano/go-types v0.0.4/go.mod h1:oBCPWUnt03e08Vx9xK/glToogunkKghQwgIAhDBk95c=
 github.com/a-castellano/go-types v0.0.6 h1:7M7awgGikAVhTdaRsEZYA19C7rQcH/qMnuVxs184FFA=
 github.com/a-castellano/go-types v0.0.6/go.mod h1:oBCPWUnt03e08Vx9xK/glToogunkKghQwgIAhDBk95c=
+github.com/a-castellano/go-types v0.0.7 h1:JYIPu3dtdOz8XySNzOZ2GWvaLByWQKSOMeFmUVdGkV8=
+github.com/a-castellano/go-types v0.0.7/go.mod h1:oBCPWUnt03e08Vx9xK/glToogunkKghQwgIAhDBk95c=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/ginkgo/v2 v2.12.0/go.mod h1:SwYbGRRDovPVboqFv0tPTcG1sN61LM1Z4ARdbAV9g4c=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=
