@@ -3,9 +3,11 @@ package logger
 
 import (
 	"context"
-	slogconfig "github.com/a-castellano/go-types/slog"
+	"io"
 	"log/slog"
 	"os"
+
+	slogconfig "github.com/a-castellano/go-types/slog"
 )
 
 // Client, the interface contract
@@ -53,15 +55,17 @@ func (s *SlogLogger) SetDefaultLevel() {
 	s.level.Set(s.defaultLevel)
 }
 
-func NewSlogLogger(config *slogconfig.Config) *SlogLogger {
+// We need to test logging, that is why we inject an io.Writer.
+// The public NewLogger calls this with os.Stdout.
+func newSlogLogger(writer io.Writer, config *slogconfig.Config) *SlogLogger {
 	// Create a new logger with the provided configuration
 	var logger *slog.Logger
 	var programLevel = new(slog.LevelVar)
 	if config.Format == "JSON" {
-		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: config.AddSource, Level: programLevel})).With(slog.String("app", config.AppName))
+		logger = slog.New(slog.NewJSONHandler(writer, &slog.HandlerOptions{AddSource: config.AddSource, Level: programLevel})).With(slog.String("app", config.AppName))
 	} else {
 		// format is plain text
-		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: config.AddSource, Level: programLevel})).With(slog.String("app", config.AppName))
+		logger = slog.New(slog.NewTextHandler(writer, &slog.HandlerOptions{AddSource: config.AddSource, Level: programLevel})).With(slog.String("app", config.AppName))
 	}
 	programLevel.Set(config.DefaultLevel)
 
@@ -70,4 +74,8 @@ func NewSlogLogger(config *slogconfig.Config) *SlogLogger {
 		level:        programLevel,
 		defaultLevel: config.DefaultLevel,
 	}
+}
+
+func NewLogger(config *slogconfig.Config) *SlogLogger {
+	return newSlogLogger(os.Stdout, config)
 }
