@@ -27,3 +27,5 @@ coverage.html
 
 # Local Go module cache (populated by development/docker-compose.yml)
 development/gomodcache/
+
+development/plans/*
