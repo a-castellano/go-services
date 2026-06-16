@@ -5,6 +5,7 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	slogconfig "github.com/a-castellano/go-types/slog"
 	"log/slog"
@@ -134,4 +135,27 @@ func TestNewLogger(t *testing.T) {
 	config := slogconfig.Config{DefaultLevel: slog.LevelInfo, Format: "plain", AddSource: false, AppName: "LogSomething"}
 
 	NewLogger(&config)
+}
+
+func TestWithLogger(t *testing.T) {
+	var buf bytes.Buffer
+	cfg := slogconfig.Config{DefaultLevel: slog.LevelInfo, Format: "plain", AppName: "x"}
+	contextLogger := newSlogLogger(&buf, &cfg)
+
+	// Add logger to context
+	ctx := WithLogger(context.Background(), contextLogger)
+
+	retrievedLogger := FromContext(ctx)
+
+	if retrievedLogger != contextLogger {
+		t.Errorf("FromContext returned a different logger than the one stored")
+	}
+}
+
+func TestFromContextDefaultLogger(t *testing.T) {
+
+	ctx := context.Background()
+	// don't define logger, so a defult slog should be returned
+	FromContext(ctx)
+
 }
