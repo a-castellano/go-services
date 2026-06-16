@@ -125,7 +125,7 @@ func TestRabbitmqInvalidCredentials(t *testing.T) {
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
 	// Test sending a message with invalid credentials
-	dial_error := rabbitmqClient.SendMessage(queueName, testString)
+	dial_error := rabbitmqClient.SendMessage(context.Background(), queueName, testString)
 
 	if dial_error == nil {
 		t.Errorf("TestRabbitmqInvalidCredentials should fail.")
@@ -157,7 +157,7 @@ func TestRabbitmqSendMessage(t *testing.T) {
 	rabbitmqClient := NewRabbitmqClient(rabbitmqConfig)
 
 	// Test sending a message with valid configuration
-	sendError := rabbitmqClient.SendMessage(queueName, testString)
+	sendError := rabbitmqClient.SendMessage(context.Background(), queueName, testString)
 
 	if sendError != nil {
 		t.Errorf("TestRabbitmqSendMessage shouldn't fail. Error was '%s'.", sendError.Error())
