@@ -39,8 +39,8 @@ func TestLogSomething(t *testing.T) {
 		if !strings.Contains(emittedLog, "level=INFO") {
 			t.Errorf("expected log to contain level=INFO, got: %q", emittedLog)
 		}
-		if !strings.Contains(emittedLog, "source=/app/infra/logger") {
-			t.Errorf("expected log to contain at least source=/app/infra/logger, got: %q", emittedLog)
+		if !strings.Contains(emittedLog, "infra/logger/logger_test.go:") {
+			t.Errorf("expected log to contain at least infra/logger/logger_test.go:, got: %q", emittedLog)
 		}
 
 	}
