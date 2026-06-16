@@ -13,7 +13,7 @@ This repository stores reusable services used by many of my projects. The aim is
 The library is split into two layers that follow the dependency injection pattern:
 
 - **`services/`** — high-level service abstractions. Each service defines a `Client` interface and delegates the actual work to whatever implementation you inject. This is what your application code depends on, which keeps it decoupled and easy to test with mocks.
-- **`infra/`** — standalone backend clients (for example, a Redis driver or a RabbitMQ driver). They are kept separate from the services because they are reusable on their own: a driver happens to satisfy a given service's `Client` interface, but it can be used directly or back any other service whose interface it satisfies. Swap drivers without touching the code that uses the service.
+- **`infra/`** — direct services: components used directly, not through a `services/` abstraction. There are three — the Redis and RabbitMQ backend clients and the logger. The Redis and RabbitMQ services can additionally back the matching `services/` abstractions, but they are reusable on their own.
 
 To use a service you pick a driver from `infra/`, build it, and inject it into the matching service.
 
@@ -26,37 +26,17 @@ To use a service you pick a driver from `infra/`, build it, and inject it into t
 
 Each service README documents its interface, the matching driver, a complete wired example, configuration, and testing.
 
-## Drivers
+## Direct Services (Infra)
 
-The `infra/` packages are standalone backend clients, kept separate from the services on purpose: each one happens to satisfy a service `Client` interface today, but it is reusable on its own and can back any other service whose interface it satisfies. Use a driver injected into a service, or directly on its own.
+The `infra/` packages are direct services: components you use directly, not through a `services/` abstraction. There are three — Redis, RabbitMQ and the logger — each reusable on its own and documented in its own README (usage, configuration and testing).
 
-| Driver             | Backend        | Satisfies               | Documentation                              |
-| ------------------ | -------------- | ----------------------- | ------------------------------------------ |
-| **RedisClient**    | Redis / Valkey | `memorydatabase.Client` | [infra/redis](infra/redis/Readme.md)       |
-| **RabbitmqClient** | RabbitMQ       | `messagebroker.Client`  | [infra/rabbitmq](infra/rabbitmq/Readme.md) |
+| Service      | Backend        | Documentation                              |
+| ------------ | -------------- | ------------------------------------------ |
+| **Redis**    | Redis / Valkey | [infra/redis](infra/redis/Readme.md)       |
+| **RabbitMQ** | RabbitMQ       | [infra/rabbitmq](infra/rabbitmq/Readme.md) |
+| **Logger**   | `log/slog`     | [infra/logger](infra/logger/Readme.md)     |
 
-## Logging
-
-A cross-cutting structured logger built on the standard library `log/slog`. It
-does not satisfy a service `Client` interface like the drivers above; instead it
-implements the **"logger in the context"** pattern: build it once at startup,
-store it in the `context.Context` with `WithLogger`, and read it anywhere with
-`FromContext` (which never returns nil). Because every service and driver already
-receives a `ctx`, adding logs requires no signature changes.
-
-| Component  | Backend         | Documentation                          |
-| ---------- | --------------- | -------------------------------------- |
-| **Logger** | `log/slog`      | [infra/logger](infra/logger/Readme.md) |
-
-```go
-config, _ := slogconfig.NewConfig()                  // github.com/a-castellano/go-types/slog
-ctx := logger.WithLogger(context.Background(), logger.NewLogger(config))
-// ...anywhere downstream that has the ctx:
-logger.FromContext(ctx).InfoContext(ctx, "started", "app", "my-service")
-```
-
-See [infra/logger](infra/logger/Readme.md) for startup wiring, usage from other
-services, runtime level changes, and configuration.
+The Redis and RabbitMQ services can also back the matching `services/` abstractions ([MemoryDatabase](services/memorydatabase/Readme.md) and [MessageBroker](services/messagebroker/Readme.md)). The logger travels in the `context.Context`: build it once at startup with `logger.WithLogger`, then read it anywhere with `logger.FromContext`.
 
 ## Installation
 
@@ -132,7 +112,7 @@ Each service README lists the test targets scoped to that service.
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
 
 ## Dependencies
 
