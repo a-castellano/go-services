@@ -35,6 +35,29 @@ The `infra/` packages are standalone backend clients, kept separate from the ser
 | **RedisClient**    | Redis / Valkey | `memorydatabase.Client` | [infra/redis](infra/redis/Readme.md)       |
 | **RabbitmqClient** | RabbitMQ       | `messagebroker.Client`  | [infra/rabbitmq](infra/rabbitmq/Readme.md) |
 
+## Logging
+
+A cross-cutting structured logger built on the standard library `log/slog`. It
+does not satisfy a service `Client` interface like the drivers above; instead it
+implements the **"logger in the context"** pattern: build it once at startup,
+store it in the `context.Context` with `WithLogger`, and read it anywhere with
+`FromContext` (which never returns nil). Because every service and driver already
+receives a `ctx`, adding logs requires no signature changes.
+
+| Component  | Backend         | Documentation                          |
+| ---------- | --------------- | -------------------------------------- |
+| **Logger** | `log/slog`      | [infra/logger](infra/logger/Readme.md) |
+
+```go
+config, _ := slogconfig.NewConfig()                  // github.com/a-castellano/go-types/slog
+ctx := logger.WithLogger(context.Background(), logger.NewLogger(config))
+// ...anywhere downstream that has the ctx:
+logger.FromContext(ctx).InfoContext(ctx, "started", "app", "my-service")
+```
+
+See [infra/logger](infra/logger/Readme.md) for startup wiring, usage from other
+services, runtime level changes, and configuration.
+
 ## Installation
 
 ```bash
@@ -98,6 +121,8 @@ podman exec -it development_golang_1 make coverage      # coverage report
 | `make test_messagebroker_unit` | Run MessageBroker unit tests                      |
 | `make test_redis`              | Run all Redis driver tests                        |
 | `make test_rabbitmq`           | Run all RabbitMQ driver tests                     |
+| `make test_logger_unit`        | Run logger unit tests                             |
+| `make test_logger`             | Run all logger tests                              |
 | `make race`                    | Run tests with the data race detector             |
 | `make msan`                    | Run tests with the memory sanitizer               |
 | `make coverage`                | Generate the coverage report                      |
