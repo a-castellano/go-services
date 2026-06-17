@@ -130,8 +130,8 @@ func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 			if err == nil {
 				t.Errorf("redisClient.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
-				if err.Error() != "Redis client is not initiated, cannot perform WriteString operation" {
-					t.Errorf("redisClient.WriteString call without redisClient being initiated should return error \"Redis client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
+				if err.Error() != "redis client is not initiated, cannot perform WriteString operation" {
+					t.Errorf("redisClient.WriteString call without redisClient being initiated should return error \"redis client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
 		}

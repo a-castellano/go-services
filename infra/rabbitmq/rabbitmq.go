@@ -131,7 +131,7 @@ func (client RabbitmqClient) SendMessage(ctx context.Context, queueName string, 
 
 	log := logger.FromContext(ctx)
 	// Establish connection to RabbitMQ server
-	log.DebugContext(ctx, "dialing connection to RabbitMQ before sending a message", "operation", "send")
+	log.DebugContext(ctx, "dialing connection to RabbitMQ before sending a message", "rabbitmqConfig", client.config, "operation", "send")
 	conn, errDial := client.dial(client.config.ConnectionString)
 	if errDial != nil {
 		log.ErrorContext(ctx, "RabbitMQ dial before sending a message has failed", "operation", "send", "error", errDial.Error())
@@ -205,7 +205,7 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 	log := logger.FromContext(ctx)
 
 	// Establish connection to RabbitMQ server
-	log.DebugContext(ctx, "dialing connection to RabbitMQ before receiving messages", "operation", "receive")
+	log.DebugContext(ctx, "dialing connection to RabbitMQ before receiving messages", "rabbitmqConfig", client.config, "operation", "receive")
 	conn, errDial := client.dial(client.config.ConnectionString)
 
 	if errDial != nil {
