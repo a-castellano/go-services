@@ -249,7 +249,7 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 
 	log.DebugContext(ctx, "declaring RabbitMQ queue has succeeded", "operation", "receive", "queueName", queueName)
 	// Set quality of service - process one message at a time
-	log.DebugContext(ctx, "declaring RabbitMQ QoS", "operation", "receive")
+	log.DebugContext(ctx, "setting RabbitMQ QoS", "operation", "receive")
 	errChannelQos := channel.Qos(
 		1,     // prefetch count - number of messages to prefetch
 		0,     // prefetch size - size of messages to prefetch (0 = unlimited)
@@ -258,7 +258,7 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 
 	if errChannelQos != nil {
 		errors <- errChannelQos
-		log.ErrorContext(ctx, "error declaring channel QoS", "operation", "receive", "error", errChannelQos.Error())
+		log.ErrorContext(ctx, "error setting channel QoS", "operation", "receive", "error", errChannelQos.Error())
 		return
 	}
 
