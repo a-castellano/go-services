@@ -109,6 +109,12 @@ Both `SendMessage` and `ReceiveMessages` declare the queue before using it:
 - **Global**: `false` — applies to this channel only
 - Messages are auto-acknowledged as they are consumed.
 
+## Logging
+
+The driver is instrumented with the [logger](../logger/Readme.md) infra service. Both `SendMessage` and `ReceiveMessages` retrieve the logger from the context with `logger.FromContext(ctx)`, so logs inherit any handler and attributes configured upstream. The full lifecycle (dial, channel open, queue declaration, QoS, publish and consume) is traced at `Debug` level and failures are reported at `Error` level; each entry carries an `operation` attribute (`send` or `receive`) to ease filtering.
+
+When the configuration is logged (on dial), the credentials are **not** exposed: `rabbitmqconfig.Config` implements `slog.LogValuer` and its `LogValue` method redacts the password as `*****`, so the real connection string never reaches the log. Passing `client.config` straight to the logger is therefore safe.
+
 ## Configuration
 
 Configuration comes from the [`go-types`](https://git.windmaker.net/a-castellano/go-types) library via `rabbitmqconfig.NewConfig()`, which reads these environment variables:

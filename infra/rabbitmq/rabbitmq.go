@@ -4,6 +4,7 @@ package rabbitmq
 import (
 	"context"
 
+	logger "github.com/a-castellano/go-services/infra/logger"
 	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -126,26 +127,35 @@ func NewRabbitmqClient(rabbitmqConfig *rabbitmqconfig.Config) RabbitmqClient {
 // SendMessage sends a message to the specified queue in RabbitMQ.
 // The message is sent as persistent to ensure it survives server restarts.
 // Returns an error if the connection fails or if the message cannot be published.
-func (client RabbitmqClient) SendMessage(queueName string, message []byte) error {
+func (client RabbitmqClient) SendMessage(ctx context.Context, queueName string, message []byte) error {
 
+	log := logger.FromContext(ctx)
 	// Establish connection to RabbitMQ server
+	log.DebugContext(ctx, "dialing connection to RabbitMQ before sending a message", "rabbitmqConfig", client.config, "operation", "send")
 	conn, errDial := client.dial(client.config.ConnectionString)
 	if errDial != nil {
+		log.ErrorContext(ctx, "RabbitMQ dial before sending a message has failed", "operation", "send", "error", errDial.Error())
 		return errDial
 	}
+
+	log.DebugContext(ctx, "dialing connection to RabbitMQ has succeeded", "operation", "send")
 	defer conn.Close()
 
 	// Create a channel for communication
+	log.DebugContext(ctx, "opening RabbitMQ channel", "operation", "send")
 	channel, errChannel := conn.Channel()
 
 	if errChannel != nil {
+		log.ErrorContext(ctx, "an error has occurred during RabbitMQ channel opening", "operation", "send", "error", errChannel.Error())
 		return errChannel
 	}
+	log.DebugContext(ctx, "opening RabbitMQ channel has succeeded", "operation", "send")
 
 	defer channel.Close()
 
 	// Declare the queue to ensure it exists
 	// Parameters: name, durable, delete when unused, exclusive, no-wait, arguments
+	log.DebugContext(ctx, "declaring RabbitMQ queue", "operation", "send", "queueName", queueName)
 	queue, errQueue := channel.QueueDeclare(
 
 		queueName, // name
@@ -158,10 +168,13 @@ func (client RabbitmqClient) SendMessage(queueName string, message []byte) error
 	)
 
 	if errQueue != nil {
+		log.ErrorContext(ctx, "error declaring RabbitMQ queue", "operation", "send", "queueName", queueName, "error", errQueue.Error())
 		return errQueue
 	}
 
+	log.DebugContext(ctx, "declaring RabbitMQ queue has succeeded", "operation", "send", "queueName", queueName)
 	// Publish the message to the queue
+	log.DebugContext(ctx, "publishing RabbitMQ message", "operation", "send", "queueName", queueName)
 	err := channel.Publish(
 
 		"",         // exchange - empty string for default exchange
@@ -175,9 +188,11 @@ func (client RabbitmqClient) SendMessage(queueName string, message []byte) error
 		})
 
 	if err != nil {
+		log.ErrorContext(ctx, "error publishing RabbitMQ message", "operation", "send", "queueName", queueName, "error", err.Error())
 		return err
 	}
 
+	log.DebugContext(ctx, "publishing RabbitMQ message has succeeded", "operation", "send", "queueName", queueName)
 	return nil
 }
 
@@ -187,25 +202,35 @@ func (client RabbitmqClient) SendMessage(queueName string, message []byte) error
 // This method runs until the context is canceled or an error occurs.
 func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error) {
 
+	log := logger.FromContext(ctx)
+
 	// Establish connection to RabbitMQ server
+	log.DebugContext(ctx, "dialing connection to RabbitMQ before receiving messages", "rabbitmqConfig", client.config, "operation", "receive")
 	conn, errDial := client.dial(client.config.ConnectionString)
 
 	if errDial != nil {
 		errors <- errDial
+		log.ErrorContext(ctx, "RabbitMQ dial before receiving messages has failed", "operation", "receive", "error", errDial.Error())
 		return
 	}
 
+	log.DebugContext(ctx, "dialing connection to RabbitMQ before receiving messages has succeeded", "operation", "receive")
 	defer conn.Close()
 
+	log.DebugContext(ctx, "opening RabbitMQ channel", "operation", "receive")
 	// Create a channel for communication
 	channel, errChannel := conn.Channel()
 
 	if errChannel != nil {
 		errors <- errChannel
+		log.ErrorContext(ctx, "an error has occurred during RabbitMQ channel opening", "operation", "receive", "error", errChannel.Error())
 		return
 	}
 
+	log.DebugContext(ctx, "opening RabbitMQ channel has succeeded", "operation", "receive")
+
 	// Declare the queue to ensure it exists
+	log.DebugContext(ctx, "declaring RabbitMQ queue", "operation", "receive", "queueName", queueName)
 	// Parameters: name, durable, delete when unused, exclusive, no-wait, arguments
 	_, errQueue := channel.QueueDeclare(
 		queueName,
@@ -218,10 +243,13 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 
 	if errQueue != nil {
 		errors <- errQueue
+		log.ErrorContext(ctx, "error declaring RabbitMQ queue", "operation", "receive", "queueName", queueName, "error", errQueue.Error())
 		return
 	}
 
+	log.DebugContext(ctx, "declaring RabbitMQ queue has succeeded", "operation", "receive", "queueName", queueName)
 	// Set quality of service - process one message at a time
+	log.DebugContext(ctx, "setting RabbitMQ QoS", "operation", "receive")
 	errChannelQos := channel.Qos(
 		1,     // prefetch count - number of messages to prefetch
 		0,     // prefetch size - size of messages to prefetch (0 = unlimited)
@@ -230,10 +258,12 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 
 	if errChannelQos != nil {
 		errors <- errChannelQos
+		log.ErrorContext(ctx, "error setting channel QoS", "operation", "receive", "error", errChannelQos.Error())
 		return
 	}
 
 	// Start consuming messages from the queue
+	log.DebugContext(ctx, "start consuming messages from queue", "operation", "receive", "queueName", queueName)
 	// Parameters: queue, consumer, auto-ack, exclusive, no-local, no-wait, args
 	messagesToReceive, errMessageReceived := channel.Consume(
 		queueName,
@@ -247,6 +277,7 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 
 	if errMessageReceived != nil {
 		errors <- errMessageReceived
+		log.ErrorContext(ctx, "error receiving RabbitMQ message", "operation", "receive", "queueName", queueName, "error", errMessageReceived.Error())
 		return
 	}
 
@@ -260,6 +291,7 @@ func (client RabbitmqClient) ReceiveMessages(ctx context.Context, queueName stri
 		select {
 		case <-ctx.Done(): // Exit function if context is canceled
 			errors <- nil
+			log.DebugContext(ctx, "exiting from message consuming function", "operation", "receive")
 			return
 		default:
 			continue

@@ -106,6 +106,12 @@ Stores `value` under `key` with a TTL in seconds (`0` means no expiration). Retu
 
 Reads the value for `key`. Returns the value, `true` when the key exists, and an error. A missing key returns `("", false, nil)` — it is not treated as an error.
 
+## Logging
+
+The driver is instrumented with the [logger](../logger/Readme.md) infra service. Every method retrieves the logger from the context with `logger.FromContext(ctx)`, so logs inherit any handler and attributes configured upstream. Operations are traced at `Debug` level (connection setup, host resolution, reads and writes) and failures are reported at `Error` level; each entry carries an `operation` attribute (`initiate`, `WriteString`, `ReadString`) to ease filtering.
+
+When the configuration is logged (for example on `Initiate`), the password is **not** exposed: `redisconfig.Config` implements `slog.LogValuer` and its `LogValue` method masks the password as `*****` (and omits it entirely when empty). Passing `client.config` straight to the logger is therefore safe.
+
 ## Configuration
 
 Configuration comes from the [`go-types`](https://git.windmaker.net/a-castellano/go-types) library via `redisconfig.NewConfig()`, which reads these environment variables:
