@@ -5,6 +5,7 @@ package memorydatabase
 import (
 	"context"
 	"errors"
+	logger "github.com/a-castellano/go-services/infra/logger"
 )
 
 // Client interface defines the contract for memory database operations.
@@ -41,9 +42,14 @@ func NewMemoryDatabase(client Client) MemoryDatabase {
 // This is a wrapper method that checks if the client is initialized before performing the operation.
 // Returns an error if the client is not initialized or if the write operation fails.
 func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key string, value string, ttl int) error {
+	log := logger.FromContext(ctx)
+	log.DebugContext(ctx, "Cheking if memorydatabase client is initiated", "operation", "WriteString")
+
 	if memorydatabase.client.IsClientInitiated() {
+		log.DebugContext(ctx, "Writing into memorydatabase", "key", key, "value", value, "operation", "WriteString")
 		return memorydatabase.client.WriteString(ctx, key, value, ttl)
 	} else {
+		log.ErrorContext(ctx, "MemoryDatabase is not initiated, cannot perform WriteString operation", "operation", "WriteString")
 		return errors.New("MemoryDatabase client is not initiated, cannot perform WriteString operation")
 	}
 }
@@ -53,9 +59,14 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 // Returns the value, a boolean indicating if the key was found, and any error.
 // Returns an error if the client is not initialized.
 func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, bool, error) {
+	log := logger.FromContext(ctx)
+	log.DebugContext(ctx, "Cheking if memorydatabase client is initiated", "operation", "ReadString")
+
 	if memorydatabase.client.IsClientInitiated() {
+		log.DebugContext(ctx, "reading from memorydatabase", "key", key, "operation", "ReadString")
 		return memorydatabase.client.ReadString(ctx, key)
 	} else {
+		log.ErrorContext(ctx, "MemoryDatabase is not initiated, cannot perform ReadString operation", "operation", "ReadString")
 		return "", false, errors.New("MemoryDatabase client is not initiated, cannot perform ReadString operation")
 	}
 }

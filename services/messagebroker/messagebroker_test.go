@@ -10,7 +10,7 @@ import (
 
 type mockBroker struct{}
 
-func (m *mockBroker) SendMessage(string, []byte) error {
+func (m *mockBroker) SendMessage(context.Context, string, []byte) error {
 	return nil
 }
 
@@ -22,9 +22,10 @@ func TestSendMessage(t *testing.T) {
 
 	client := mockBroker{}
 	messageBroker := MessageBroker{Client: &client}
+	ctx := context.Background()
 
 	// Test sending a message through the mock client
-	messageBroker.SendMessage("test", []byte("test"))
+	messageBroker.SendMessage(ctx, "test", []byte("test"))
 
 }
 

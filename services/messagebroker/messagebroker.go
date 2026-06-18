@@ -3,6 +3,7 @@ package messagebroker
 
 import (
 	"context"
+	logger "github.com/a-castellano/go-services/infra/logger"
 )
 
 // Client interface defines the contract for message broker operations.
@@ -10,7 +11,7 @@ import (
 type Client interface {
 	// SendMessage sends a message to the specified queue.
 	// Returns an error if the operation fails.
-	SendMessage(string, []byte) error
+	SendMessage(context.Context, string, []byte) error
 
 	// ReceiveMessages continuously receives messages from the specified queue.
 	// Messages are sent to the messages channel, and errors to the errors channel.
@@ -26,13 +27,19 @@ type MessageBroker struct {
 
 // SendMessage sends a message to the specified queue using the underlying client.
 // This is a wrapper method that delegates to the client's SendMessage method.
-func (messageBroker MessageBroker) SendMessage(queueName string, message []byte) error {
-	return messageBroker.Client.SendMessage(queueName, message)
+func (messageBroker MessageBroker) SendMessage(ctx context.Context, queueName string, message []byte) error {
+
+	log := logger.FromContext(ctx)
+	log.DebugContext(ctx, "sending message throught messageBroker", "queueName", queueName, "message", message, "operation", "SendMessage")
+	return messageBroker.Client.SendMessage(ctx, queueName, message)
 }
 
 // ReceiveMessages receives messages from the specified queue using the underlying client.
 // This is a wrapper method that delegates to the client's ReceiveMessages method.
 // The operation can be stopped by canceling the provided context.
 func (messageBroker MessageBroker) ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error) {
+	log := logger.FromContext(ctx)
+	log.DebugContext(ctx, "receiving messages from messageBroker", "queueName", queueName, "operation", "ReceiveMessages")
+
 	messageBroker.Client.ReceiveMessages(ctx, queueName, messages, errors)
 }
