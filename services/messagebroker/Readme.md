@@ -21,7 +21,7 @@ A `MessageBroker` needs a value that implements this interface:
 
 ```go
 type Client interface {
-    SendMessage(string, []byte) error
+    SendMessage(context.Context, string, []byte) error
     ReceiveMessages(context.Context, string, chan<- []byte, chan<- error)
 }
 ```
@@ -47,6 +47,7 @@ messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
 package main
 
 import (
+    "context"
     "log"
 
     "github.com/a-castellano/go-services/infra/rabbitmq"
@@ -65,8 +66,10 @@ func main() {
     rabbitmqClient := rabbitmq.NewRabbitmqClient(config)
     messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
 
+    ctx := context.Background()
+
     // Send a message.
-    if err := messageBroker.SendMessage("my-queue", []byte("Hello, World!")); err != nil {
+    if err := messageBroker.SendMessage(ctx, "my-queue", []byte("Hello, World!")); err != nil {
         log.Fatal(err)
     }
     log.Println("Message sent successfully")
@@ -132,7 +135,7 @@ func main() {
 
 Builds a `MessageBroker` around an injected `Client`. There is no constructor function — set the `Client` field directly.
 
-#### `SendMessage(queueName string, message []byte) error`
+#### `SendMessage(ctx context.Context, queueName string, message []byte) error`
 
 Sends `message` to `queueName`. Returns an error if the operation fails.
 
@@ -151,6 +154,23 @@ Creates a `RabbitmqClient` wired to a real broker connection (it injects the pro
 Same signatures as the service methods; these perform the actual RabbitMQ work described below.
 
 > The driver is built around small `AMQPConnection` / `AMQPChannel` interfaces plus an injectable `DialFunc`. Production code uses the real dialer; unit tests build a `RabbitmqClient` with a fake dialer to avoid touching a real server.
+
+## Logging
+
+The service is instrumented with the [logger](../../infra/logger/Readme.md) infra service. Both `SendMessage` and `ReceiveMessages` retrieve the logger from the context with `logger.FromContext(ctx)`, so logs inherit any handler and attributes configured upstream. Each method logs the operation start at `Debug` level and carries an `operation` attribute (`SendMessage` or `ReceiveMessages`) to ease filtering. The actual broker-level lifecycle (dial, channel, queue, publish/consume) is traced by the underlying driver ([infra/rabbitmq](../../infra/rabbitmq/Readme.md)).
+
+To attach a logger, wire it at startup and pass the enriched context down:
+
+```go
+import (
+    "github.com/a-castellano/go-services/infra/logger"
+    slogconfig "github.com/a-castellano/go-types/slog"
+)
+
+config, _ := slogconfig.NewConfig()
+appLogger := logger.NewLogger(config)
+ctx := logger.WithLogger(context.Background(), appLogger)
+```
 
 ## Behavior
 

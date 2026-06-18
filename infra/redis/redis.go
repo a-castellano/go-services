@@ -41,28 +41,28 @@ func (client *RedisClient) IsClientInitiated() bool {
 func (client *RedisClient) Initiate(ctx context.Context) error {
 
 	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "Initiating Redis connection", "redisConfig", client.config, "operation", "initiate")
+	log.DebugContext(ctx, "initiating Redis connection", "redisConfig", client.config, "operation", "initiate")
 	var actualHost string
 	// Check if config.Host is a valid IP address
 	if ip := net.ParseIP(client.config.Host); ip != nil {
-		log.DebugContext(ctx, "Redis Host is a valid IP address, using it directly", "ip", ip, "operation", "initiate")
+		log.DebugContext(ctx, "Redis host is a valid IP address, using it directly", "ip", ip, "operation", "initiate")
 		actualHost = client.config.Host
 	} else {
 		// client.config.Host is a domain name, resolve it to an IP address
-		log.DebugContext(ctx, "Redis Host is a domain name, resolving it to an IP address", "clientHost", client.config.Host, "operation", "initiate")
+		log.DebugContext(ctx, "Redis host is a domain name, resolving it to an IP address", "clientHost", client.config.Host, "operation", "initiate")
 		ips, lookupErr := net.LookupIP(client.config.Host)
 		if lookupErr != nil {
-			log.ErrorContext(ctx, "Cannot lookup Redis Host domain name", "clientHost", client.config.Host, "errorMessage", lookupErr.Error(), "operation", "initiate")
+			log.ErrorContext(ctx, "cannot lookup Redis host domain name", "clientHost", client.config.Host, "errorMessage", lookupErr.Error(), "operation", "initiate")
 			return lookupErr
 		}
 		actualHost = fmt.Sprintf("%s", ips[0])
-		log.DebugContext(ctx, "Redis Host ip resolved", "clientHost", client.config.Host, "actualIP", actualHost, "operation", "initiate")
+		log.DebugContext(ctx, "Redis host IP resolved", "clientHost", client.config.Host, "actualIP", actualHost, "operation", "initiate")
 	}
 
 	// Construct the Redis server address
 	redisAddr := fmt.Sprintf("%s:%d", actualHost, client.config.Port)
 
-	log.DebugContext(ctx, "Creating redis client", "operation", "initiate")
+	log.DebugContext(ctx, "creating Redis client", "operation", "initiate")
 	// Create and configure the Redis client
 	client.client = goredis.NewClient(&goredis.Options{
 		Addr:     redisAddr,
@@ -70,7 +70,7 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 		DB:       client.config.Database,
 	})
 
-	log.DebugContext(ctx, "Validating Redis client connection with ping", "operation", "initiate")
+	log.DebugContext(ctx, "validating Redis client connection with ping", "operation", "initiate")
 	// Test the connection with a ping
 	_, pingErr := client.client.Ping(ctx).Result()
 	if pingErr != nil {
@@ -90,12 +90,12 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 func (client *RedisClient) WriteString(ctx context.Context, key string, value string, ttl int) error {
 
 	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "Checking if Redis client is initiated", "operation", "WriteString")
+	log.DebugContext(ctx, "checking if Redis client is initiated", "operation", "WriteString")
 	if client.clientInitiated == false {
 		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform WriteString operation", "operation", "WriteString")
 		return errors.New("redis client is not initiated, cannot perform WriteString operation")
 	}
-	log.DebugContext(ctx, "Writing value to Redis", "key", key, "value", value, "operation", "WriteString")
+	log.DebugContext(ctx, "writing value to Redis", "key", key, "value", value, "operation", "WriteString")
 	status := client.client.Set(ctx, key, value, time.Duration(ttl)*time.Second)
 	return status.Err()
 }
@@ -107,14 +107,14 @@ func (client *RedisClient) ReadString(ctx context.Context, key string) (string, 
 	var found bool = true
 	var emptyValue string = ""
 	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "Checking if Redis client is initiated", "operation", "ReadString")
+	log.DebugContext(ctx, "checking if Redis client is initiated", "operation", "ReadString")
 
 	if client.clientInitiated == false {
 		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform ReadString operation", "operation", "ReadString")
 		return emptyValue, found, errors.New("redis client is not initiated, cannot perform ReadString operation")
 	}
 
-	log.DebugContext(ctx, "Reading from redis", "key", key, "operation", "ReadString")
+	log.DebugContext(ctx, "reading from Redis", "key", key, "operation", "ReadString")
 	readValue, err := client.client.Get(ctx, key).Result()
 	if err != nil {
 		found = false
@@ -124,7 +124,7 @@ func (client *RedisClient) ReadString(ctx context.Context, key string) (string, 
 			return emptyValue, found, nil
 		} else {
 			// Other error occurred
-			log.ErrorContext(ctx, "Cannot perform read operation from Redis", "error", err.Error(), "operation", "ReadString")
+			log.ErrorContext(ctx, "cannot perform read operation from Redis", "error", err.Error(), "operation", "ReadString")
 			return emptyValue, found, err
 		}
 	}

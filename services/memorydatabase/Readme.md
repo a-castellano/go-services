@@ -119,6 +119,31 @@ Returns `true` once `Initiate` has succeeded.
 
 Same signatures as the service methods; these perform the actual Redis operations.
 
+## Logging
+
+The service is instrumented with the [logger](../../infra/logger/Readme.md) infra service. Both `WriteString` and `ReadString` retrieve the logger from the context with `logger.FromContext(ctx)`, so logs inherit any handler and attributes configured upstream. Each method carries an `operation` attribute (`WriteString` or `ReadString`) to ease filtering.
+
+The log lifecycle for each operation is:
+
+1. **Debug** — checking whether the driver is initiated.
+2. **Debug** — the key (and value, for writes) just before delegating to the driver.
+3. **Error** — if the driver was not initiated, before returning the error.
+
+The actual storage-level lifecycle (ping, read, write) is traced by the underlying driver ([infra/redis](../../infra/redis/Readme.md)).
+
+To attach a logger, wire it at startup and pass the enriched context down:
+
+```go
+import (
+    "github.com/a-castellano/go-services/infra/logger"
+    slogconfig "github.com/a-castellano/go-types/slog"
+)
+
+config, _ := slogconfig.NewConfig()
+appLogger := logger.NewLogger(config)
+ctx := logger.WithLogger(context.Background(), appLogger)
+```
+
 ## Configuration
 
 The Redis driver reads its configuration from the [`go-types`](https://git.windmaker.net/a-castellano/go-types) library via `redisconfig.NewConfig()`, which uses these environment variables:

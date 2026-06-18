@@ -30,7 +30,7 @@ type MessageBroker struct {
 func (messageBroker MessageBroker) SendMessage(ctx context.Context, queueName string, message []byte) error {
 
 	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "sending message throught messageBroker", "queueName", queueName, "message", message, "operation", "SendMessage")
+	log.DebugContext(ctx, "sending message through messageBroker", "queueName", queueName, "message", message, "operation", "SendMessage")
 	return messageBroker.Client.SendMessage(ctx, queueName, message)
 }
 
