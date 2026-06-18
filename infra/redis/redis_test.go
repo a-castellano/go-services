@@ -162,7 +162,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 			if err == nil {
 				t.Errorf("redisClient.ReadString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
-				if err.Error() != "Redis client is not initiated, cannot perform ReadString operation" {
+				if err.Error() != "redis client is not initiated, cannot perform ReadString operation" {
 					t.Errorf("redisClient.ReadString call without redisClient being initiated should return error \"Redis client is not initiated, cannot perform ReadString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
