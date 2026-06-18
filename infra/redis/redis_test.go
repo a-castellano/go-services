@@ -1,7 +1,6 @@
 //go:build integration_tests || unit_tests || redis_tests || redis_unit_tests
 
-// Package redis_test contains unit tests for the redis package.
-// Tests cover Redis client functionality.
+// Unit tests for the redis package.
 package redis
 
 import (
@@ -131,8 +130,8 @@ func TestRedIsClientInitiatedWithoutEnvVariablesWriteNotInitiated(t *testing.T) 
 			if err == nil {
 				t.Errorf("redisClient.WriteString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
-				if err.Error() != "Redis client is not initiated, cannot perform WriteString operation" {
-					t.Errorf("redisClient.WriteString call without redisClient being initiated should return error \"Redis client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
+				if err.Error() != "redis client is not initiated, cannot perform WriteString operation" {
+					t.Errorf("redisClient.WriteString call without redisClient being initiated should return error \"redis client is not initiated, cannot perform WriteString operation\", it has returned \"%s\"", err.Error())
 				}
 			}
 		}
@@ -163,7 +162,7 @@ func TestRedIsClientInitiatedWithoutEnvVariablesReadNotInitiated(t *testing.T) {
 			if err == nil {
 				t.Errorf("redisClient.ReadString call without redisClient being initiated should fail as redisClient is not initiated")
 			} else {
-				if err.Error() != "Redis client is not initiated, cannot perform ReadString operation" {
+				if err.Error() != "redis client is not initiated, cannot perform ReadString operation" {
 					t.Errorf("redisClient.ReadString call without redisClient being initiated should return error \"Redis client is not initiated, cannot perform ReadString operation\", it has returned \"%s\"", err.Error())
 				}
 			}

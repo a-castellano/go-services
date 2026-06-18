@@ -53,6 +53,14 @@ test_redis: ## Run redis related tests
 test_redis_unit: ## Run redis unit tests
 	@go test --tags=redis_unit_tests -short ./...
 
+# Run all logger-related tests (both unit and integration)
+test_logger: ## Run logger related tests
+	@go test --tags=logger_tests -short ./...
+
+# Run only logger unit tests
+test_logger_unit: ## Run logger unit tests
+	@go test --tags=logger_unit_tests -short ./...
+
 # Run tests with data race detector enabled
 race: ## Run data race detector
 	@go test -race -short ./...

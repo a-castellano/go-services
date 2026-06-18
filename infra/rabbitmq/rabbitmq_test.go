@@ -149,7 +149,7 @@ func TestSendMessageFailDial(t *testing.T) {
 
 	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialFailing()}
 
-	err := client.SendMessage("test-queue", []byte("test message"))
+	err := client.SendMessage(context.Background(), "test-queue", []byte("test message"))
 
 	if err == nil {
 		t.Fatal("dial was mocked to fail but SendMessage did not return an error")
@@ -170,7 +170,7 @@ func TestSendMessageFailConnChannel(t *testing.T) {
 	conn := &fakeConnection{failChannel: true}
 	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
 
-	err := client.SendMessage("test-queue", []byte("test message"))
+	err := client.SendMessage(context.Background(), "test-queue", []byte("test message"))
 
 	if err == nil {
 		t.Fatal("channel creation was mocked to fail but SendMessage did not return an error")
@@ -191,7 +191,7 @@ func TestSendMessageFailQueueDeclare(t *testing.T) {
 	conn := &fakeConnection{failQueueDeclare: true}
 	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
 
-	err := client.SendMessage("test-queue", []byte("test message"))
+	err := client.SendMessage(context.Background(), "test-queue", []byte("test message"))
 
 	if err == nil {
 		t.Fatal("queue declaration was mocked to fail but SendMessage did not return an error")
@@ -212,7 +212,7 @@ func TestSendMessageFailChannelPublish(t *testing.T) {
 	conn := &fakeConnection{failPublish: true}
 	client := RabbitmqClient{config: &rabbitmqConfig, dial: dialReturning(conn)}
 
-	err := client.SendMessage("test-queue", []byte("test message"))
+	err := client.SendMessage(context.Background(), "test-queue", []byte("test message"))
 
 	if err == nil {
 		t.Fatal("publish was mocked to fail but SendMessage did not return an error")
