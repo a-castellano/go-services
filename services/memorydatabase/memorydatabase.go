@@ -42,14 +42,14 @@ func NewMemoryDatabase(client Client) MemoryDatabase {
 // This is a wrapper method that checks if the client is initialized before performing the operation.
 // Returns an error if the client is not initialized or if the write operation fails.
 func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key string, value string, ttl int) error {
-	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "checking if memorydatabase client is initiated", "operation", "WriteString")
+	log := logger.FromContext(ctx).With("operation", "WriteString")
+	log.DebugContext(ctx, "checking if memorydatabase client is initiated")
 
 	if memorydatabase.client.IsClientInitiated() {
-		log.DebugContext(ctx, "writing into memorydatabase", "key", key, "value", value, "operation", "WriteString")
+		log.DebugContext(ctx, "writing into memorydatabase", "key", key, "value", value)
 		return memorydatabase.client.WriteString(ctx, key, value, ttl)
 	} else {
-		log.ErrorContext(ctx, "memorydatabase client is not initiated, cannot perform WriteString operation", "operation", "WriteString")
+		log.ErrorContext(ctx, "memorydatabase client is not initiated, cannot perform WriteString operation")
 		return errors.New("MemoryDatabase client is not initiated, cannot perform WriteString operation")
 	}
 }
@@ -59,14 +59,14 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 // Returns the value, a boolean indicating if the key was found, and any error.
 // Returns an error if the client is not initialized.
 func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, bool, error) {
-	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "checking if memorydatabase client is initiated", "operation", "ReadString")
+	log := logger.FromContext(ctx).With("operation", "ReadString")
+	log.DebugContext(ctx, "checking if memorydatabase client is initiated")
 
 	if memorydatabase.client.IsClientInitiated() {
-		log.DebugContext(ctx, "reading from memorydatabase", "key", key, "operation", "ReadString")
+		log.DebugContext(ctx, "reading from memorydatabase", "key", key)
 		return memorydatabase.client.ReadString(ctx, key)
 	} else {
-		log.ErrorContext(ctx, "memorydatabase client is not initiated, cannot perform ReadString operation", "operation", "ReadString")
+		log.ErrorContext(ctx, "memorydatabase client is not initiated, cannot perform ReadString operation")
 		return "", false, errors.New("MemoryDatabase client is not initiated, cannot perform ReadString operation")
 	}
 }

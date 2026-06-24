@@ -40,29 +40,29 @@ func (client *RedisClient) IsClientInitiated() bool {
 // It handles both IP addresses and domain names for the Redis host.
 func (client *RedisClient) Initiate(ctx context.Context) error {
 
-	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "initiating Redis connection", "redisConfig", client.config, "operation", "initiate")
+	log := logger.FromContext(ctx).With("operation", "Initiate")
+	log.DebugContext(ctx, "initiating Redis connection", "redisConfig", client.config)
 	var actualHost string
 	// Check if config.Host is a valid IP address
 	if ip := net.ParseIP(client.config.Host); ip != nil {
-		log.DebugContext(ctx, "Redis host is a valid IP address, using it directly", "ip", ip, "operation", "initiate")
+		log.DebugContext(ctx, "Redis host is a valid IP address, using it directly", "ip", ip)
 		actualHost = client.config.Host
 	} else {
 		// client.config.Host is a domain name, resolve it to an IP address
-		log.DebugContext(ctx, "Redis host is a domain name, resolving it to an IP address", "clientHost", client.config.Host, "operation", "initiate")
+		log.DebugContext(ctx, "Redis host is a domain name, resolving it to an IP address", "clientHost", client.config.Host)
 		ips, lookupErr := net.LookupIP(client.config.Host)
 		if lookupErr != nil {
-			log.ErrorContext(ctx, "cannot lookup Redis host domain name", "clientHost", client.config.Host, "errorMessage", lookupErr.Error(), "operation", "initiate")
+			log.ErrorContext(ctx, "cannot lookup Redis host domain name", "clientHost", client.config.Host, "errorMessage", lookupErr.Error())
 			return lookupErr
 		}
 		actualHost = fmt.Sprintf("%s", ips[0])
-		log.DebugContext(ctx, "Redis host IP resolved", "clientHost", client.config.Host, "actualIP", actualHost, "operation", "initiate")
+		log.DebugContext(ctx, "Redis host IP resolved", "clientHost", client.config.Host, "actualIP", actualHost)
 	}
 
 	// Construct the Redis server address
 	redisAddr := fmt.Sprintf("%s:%d", actualHost, client.config.Port)
 
-	log.DebugContext(ctx, "creating Redis client", "operation", "initiate")
+	log.DebugContext(ctx, "creating Redis client")
 	// Create and configure the Redis client
 	client.client = goredis.NewClient(&goredis.Options{
 		Addr:     redisAddr,
@@ -70,16 +70,16 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 		DB:       client.config.Database,
 	})
 
-	log.DebugContext(ctx, "validating Redis client connection with ping", "operation", "initiate")
+	log.DebugContext(ctx, "validating Redis client connection with ping")
 	// Test the connection with a ping
 	_, pingErr := client.client.Ping(ctx).Result()
 	if pingErr != nil {
-		log.ErrorContext(ctx, "Redis ping failed, cannot validate connection", "errorMessage", pingErr.Error(), "operation", "initiate")
+		log.ErrorContext(ctx, "Redis ping failed, cannot validate connection", "errorMessage", pingErr.Error())
 		return pingErr
 	}
 
 	// Mark the client as successfully initialized so future operations are allowed
-	log.InfoContext(ctx, "Redis client initiated", "operation", "initiate")
+	log.InfoContext(ctx, "Redis client initiated")
 	client.clientInitiated = true
 	return nil
 }
@@ -89,13 +89,13 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 // Returns an error if the operation fails or if the client is not initialized.
 func (client *RedisClient) WriteString(ctx context.Context, key string, value string, ttl int) error {
 
-	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "checking if Redis client is initiated", "operation", "WriteString")
+	log := logger.FromContext(ctx).With("operation", "WriteString")
+	log.DebugContext(ctx, "checking if Redis client is initiated")
 	if client.clientInitiated == false {
-		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform WriteString operation", "operation", "WriteString")
+		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform WriteString operation")
 		return errors.New("redis client is not initiated, cannot perform WriteString operation")
 	}
-	log.DebugContext(ctx, "writing value to Redis", "key", key, "value", value, "operation", "WriteString")
+	log.DebugContext(ctx, "writing value to Redis", "key", key, "value", value)
 	status := client.client.Set(ctx, key, value, time.Duration(ttl)*time.Second)
 	return status.Err()
 }
@@ -106,28 +106,28 @@ func (client *RedisClient) WriteString(ctx context.Context, key string, value st
 func (client *RedisClient) ReadString(ctx context.Context, key string) (string, bool, error) {
 	var found bool = true
 	var emptyValue string = ""
-	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "checking if Redis client is initiated", "operation", "ReadString")
+	log := logger.FromContext(ctx).With("operation", "ReadString")
+	log.DebugContext(ctx, "checking if Redis client is initiated")
 
 	if client.clientInitiated == false {
-		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform ReadString operation", "operation", "ReadString")
+		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform ReadString operation")
 		return emptyValue, found, errors.New("redis client is not initiated, cannot perform ReadString operation")
 	}
 
-	log.DebugContext(ctx, "reading from Redis", "key", key, "operation", "ReadString")
+	log.DebugContext(ctx, "reading from Redis", "key", key)
 	readValue, err := client.client.Get(ctx, key).Result()
 	if err != nil {
 		found = false
 		if err == goredis.Nil {
 			// Key doesn't exist in Redis
-			log.DebugContext(ctx, "Redis key is not set", "key", key, "operation", "ReadString")
+			log.DebugContext(ctx, "Redis key is not set", "key", key)
 			return emptyValue, found, nil
 		} else {
 			// Other error occurred
-			log.ErrorContext(ctx, "cannot perform read operation from Redis", "error", err.Error(), "operation", "ReadString")
+			log.ErrorContext(ctx, "cannot perform read operation from Redis", "error", err.Error())
 			return emptyValue, found, err
 		}
 	}
-	log.DebugContext(ctx, "Redis key found", "key", key, "value", readValue, "operation", "ReadString")
+	log.DebugContext(ctx, "Redis key found", "key", key, "value", readValue)
 	return readValue, found, nil
 }

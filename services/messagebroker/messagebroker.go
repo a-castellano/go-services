@@ -29,8 +29,8 @@ type MessageBroker struct {
 // This is a wrapper method that delegates to the client's SendMessage method.
 func (messageBroker MessageBroker) SendMessage(ctx context.Context, queueName string, message []byte) error {
 
-	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "sending message through messageBroker", "queueName", queueName, "message", message, "operation", "SendMessage")
+	log := logger.FromContext(ctx).With("operation", "SendMessage")
+	log.DebugContext(ctx, "sending message through messageBroker", "queueName", queueName, "message", message)
 	return messageBroker.Client.SendMessage(ctx, queueName, message)
 }
 
@@ -38,8 +38,8 @@ func (messageBroker MessageBroker) SendMessage(ctx context.Context, queueName st
 // This is a wrapper method that delegates to the client's ReceiveMessages method.
 // The operation can be stopped by canceling the provided context.
 func (messageBroker MessageBroker) ReceiveMessages(ctx context.Context, queueName string, messages chan<- []byte, errors chan<- error) {
-	log := logger.FromContext(ctx)
-	log.DebugContext(ctx, "receiving messages from messageBroker", "queueName", queueName, "operation", "ReceiveMessages")
+	log := logger.FromContext(ctx).With("operation", "ReceiveMessages")
+	log.DebugContext(ctx, "receiving messages from messageBroker", "queueName", queueName)
 
 	messageBroker.Client.ReceiveMessages(ctx, queueName, messages, errors)
 }
