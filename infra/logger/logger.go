@@ -17,6 +17,7 @@ type Client interface {
 	ErrorContext(ctx context.Context, msg string, args ...any)
 	DebugContext(ctx context.Context, msg string, args ...any)
 	WarnContext(ctx context.Context, msg string, args ...any)
+	With(args ...any) Client
 }
 
 // We define a private context ctxKey
@@ -28,7 +29,11 @@ func WithLogger(ctx context.Context, l Client) context.Context {
 	return context.WithValue(ctx, ctxKey{}, l)
 }
 
-var defaultLogger Client = slog.Default()
+var defaultLogger Client = &SlogLogger{
+	Logger:       slog.Default(),
+	level:        new(slog.LevelVar),
+	defaultLevel: slog.LevelInfo,
+}
 
 // FromContext retrieves the logger. It MUST always return a usable value,
 // never nil: if the context has no logger, it returns a default fallback.
@@ -53,6 +58,18 @@ func (s *SlogLogger) SetLevel(l slog.Level) {
 
 func (s *SlogLogger) SetDefaultLevel() {
 	s.level.Set(s.defaultLevel)
+}
+
+// With returns a new Client that includes the given attributes in each log.
+// We need to define it explicitly: the With method promoted from the embedded
+// *slog.Logger returns *slog.Logger, which does not satisfy the Client
+// interface. This wrapper preserves the level state and returns a Client.
+func (s *SlogLogger) With(args ...any) Client {
+	return &SlogLogger{
+		Logger:       s.Logger.With(args...),
+		level:        s.level,
+		defaultLevel: s.defaultLevel,
+	}
 }
 
 // We need to test logging, that is why we inject an io.Writer.

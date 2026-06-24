@@ -180,3 +180,31 @@ func TestFromContextDefaultLogger(t *testing.T) {
 	FromContext(ctx)
 
 }
+
+func TestWith(t *testing.T) {
+	var buf bytes.Buffer
+	config := slogconfig.Config{DefaultLevel: slog.LevelDebug, Format: "JSON", AddSource: true, AppName: "LogSomething"}
+
+	testLogger := newSlogLogger(&buf, &config)
+
+	secondLogger := testLogger.With("extra", "field")
+
+	secondLogger.InfoContext(context.Background(), "hello")
+
+	bufferLen := buf.Len()
+
+	if bufferLen <= 0 {
+		t.Errorf("TestLogSomethingJSON has failed, buffer is empty")
+	} else {
+		var loggedData map[string]interface{}
+		if err := json.Unmarshal(buf.Bytes(), &loggedData); err != nil {
+			t.Errorf("TestLogSomethingJSON has failed, cannot unmarshal json log")
+		} else {
+			extra := loggedData["extra"].(string)
+			if extra != "field" {
+				t.Errorf("TestWith has failed, \"extra\" value should be \"field\" but it was \"%s\"", extra)
+			}
+		}
+
+	}
+}
