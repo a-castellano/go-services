@@ -17,6 +17,10 @@ type Client interface {
 	ErrorContext(ctx context.Context, msg string, args ...any)
 	DebugContext(ctx context.Context, msg string, args ...any)
 	WarnContext(ctx context.Context, msg string, args ...any)
+	// With returns a derived Client that adds the given attributes to every
+	// record. It returns Client (not *slog.Logger) so derived loggers keep
+	// satisfying this contract and can be stored back into the context.
+	With(args ...any) Client
 }
 
 // We define a private context ctxKey
@@ -28,7 +32,14 @@ func WithLogger(ctx context.Context, l Client) context.Context {
 	return context.WithValue(ctx, ctxKey{}, l)
 }
 
-var defaultLogger Client = slog.Default()
+// defaultLogger is the fallback returned by FromContext when the context
+// carries no logger. It wraps slog.Default() in a *SlogLogger so it satisfies
+// the Client interface (including With, which slog.Default() alone does not).
+var defaultLogger Client = &SlogLogger{
+	Logger:       slog.Default(),
+	level:        new(slog.LevelVar),
+	defaultLevel: slog.LevelInfo,
+}
 
 // FromContext retrieves the logger. It MUST always return a usable value,
 // never nil: if the context has no logger, it returns a default fallback.
@@ -38,7 +49,7 @@ func FromContext(ctx context.Context) Client {
 	if l, ok := ctx.Value(ctxKey{}).(Client); ok {
 		return l
 	}
-	return defaultLogger // This cannot be nil. This is why is defined.
+	return defaultLogger // This cannot be nil. This is why it is defined.
 }
 
 type SlogLogger struct {
@@ -53,6 +64,18 @@ func (s *SlogLogger) SetLevel(l slog.Level) {
 
 func (s *SlogLogger) SetDefaultLevel() {
 	s.level.Set(s.defaultLevel)
+}
+
+// With returns a new Client that includes the given attributes in each log.
+// We need to define it explicitly: the With method promoted from the embedded
+// *slog.Logger returns *slog.Logger, which does not satisfy the Client
+// interface. This wrapper preserves the level state and returns a Client.
+func (s *SlogLogger) With(args ...any) Client {
+	return &SlogLogger{
+		Logger:       s.Logger.With(args...),
+		level:        s.level,
+		defaultLevel: s.defaultLevel,
+	}
 }
 
 // We need to test logging, that is why we inject an io.Writer.
