@@ -181,6 +181,9 @@ func TestFromContextDefaultLogger(t *testing.T) {
 
 }
 
+// TestWith checks that With returns a derived logger that adds the given
+// attribute to every record while still emitting valid JSON: the "extra" field
+// must be present with the configured value.
 func TestWith(t *testing.T) {
 	var buf bytes.Buffer
 	config := slogconfig.Config{DefaultLevel: slog.LevelDebug, Format: "JSON", AddSource: true, AppName: "LogSomething"}
@@ -194,11 +197,11 @@ func TestWith(t *testing.T) {
 	bufferLen := buf.Len()
 
 	if bufferLen <= 0 {
-		t.Errorf("TestLogSomethingJSON has failed, buffer is empty")
+		t.Errorf("TestWith has failed, buffer is empty")
 	} else {
 		var loggedData map[string]interface{}
 		if err := json.Unmarshal(buf.Bytes(), &loggedData); err != nil {
-			t.Errorf("TestLogSomethingJSON has failed, cannot unmarshal json log")
+			t.Errorf("TestWith has failed, cannot unmarshal json log")
 		} else {
 			extra := loggedData["extra"].(string)
 			if extra != "field" {

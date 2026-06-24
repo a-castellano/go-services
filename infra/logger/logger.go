@@ -17,6 +17,9 @@ type Client interface {
 	ErrorContext(ctx context.Context, msg string, args ...any)
 	DebugContext(ctx context.Context, msg string, args ...any)
 	WarnContext(ctx context.Context, msg string, args ...any)
+	// With returns a derived Client that adds the given attributes to every
+	// record. It returns Client (not *slog.Logger) so derived loggers keep
+	// satisfying this contract and can be stored back into the context.
 	With(args ...any) Client
 }
 
@@ -29,6 +32,9 @@ func WithLogger(ctx context.Context, l Client) context.Context {
 	return context.WithValue(ctx, ctxKey{}, l)
 }
 
+// defaultLogger is the fallback returned by FromContext when the context
+// carries no logger. It wraps slog.Default() in a *SlogLogger so it satisfies
+// the Client interface (including With, which slog.Default() alone does not).
 var defaultLogger Client = &SlogLogger{
 	Logger:       slog.Default(),
 	level:        new(slog.LevelVar),
@@ -43,7 +49,7 @@ func FromContext(ctx context.Context) Client {
 	if l, ok := ctx.Value(ctxKey{}).(Client); ok {
 		return l
 	}
-	return defaultLogger // This cannot be nil. This is why is defined.
+	return defaultLogger // This cannot be nil. This is why it is defined.
 }
 
 type SlogLogger struct {
