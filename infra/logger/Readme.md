@@ -30,8 +30,14 @@ The package has three parts:
        ErrorContext(ctx context.Context, msg string, args ...any)
        DebugContext(ctx context.Context, msg string, args ...any)
        WarnContext(ctx context.Context, msg string, args ...any)
+       With(args ...any) Client
    }
    ```
+
+   `With` returns a **derived** `Client` that adds the given attributes to every
+   record it emits. It deliberately returns `Client` rather than `*slog.Logger`:
+   that way derived loggers keep satisfying the contract and can be stored back
+   into a context with `WithLogger`.
 
 2. **Context helpers** — `WithLogger` stores a logger in the context (once, at
    startup) and `FromContext` retrieves it anywhere. `FromContext` **never
@@ -130,6 +136,26 @@ appLogger.SetDefaultLevel()         // restore the level from the configuration
 This is the hook for, e.g., a `SIGHUP` handler or an admin endpoint that toggles
 verbose logging without a restart.
 
+### 4. Derive a logger with fixed attributes
+
+`With` returns a new `Client` that carries a set of attributes on every record,
+which is handy for tagging all the logs of a request, job or component without
+repeating the fields at each call site:
+
+```go
+func handle(ctx context.Context, reqID string) {
+    log := logger.FromContext(ctx).With("request_id", reqID)
+
+    // Optionally make the derived logger the one downstream code sees.
+    ctx = logger.WithLogger(ctx, log)
+
+    log.InfoContext(ctx, "handling request") // includes request_id
+}
+```
+
+The derived logger shares the same level control as its parent: a `SetLevel`
+call on the original `*SlogLogger` also affects loggers created with `With`.
+
 ## API reference
 
 #### `NewLogger(config *slogconfig.Config) *SlogLogger`
@@ -149,6 +175,13 @@ private key type, so it cannot collide with other context values.
 Retrieves the logger from the context. Never returns nil: with no logger present
 it returns a wrapped `slog.Default()` fallback.
 
+#### `(*SlogLogger) With(args ...any) Client`
+
+Returns a derived `Client` that adds `args` as attributes to every record. The
+derived logger shares the parent's runtime level control. Defined explicitly so
+the return type is `Client` (the `With` promoted from the embedded `*slog.Logger`
+returns `*slog.Logger` and would not satisfy the interface).
+
 #### `(*SlogLogger) SetLevel(l slog.Level)`
 
 Sets the active log level at runtime. Affects every logger sharing the same
@@ -158,8 +191,9 @@ handler immediately.
 
 Resets the active level back to the one provided in the configuration.
 
-`*SlogLogger` also embeds `*slog.Logger`, so all of its methods (`InfoContext`,
-`With`, ...) are available on the concrete type.
+`*SlogLogger` also embeds `*slog.Logger`, so its methods (`InfoContext`, `Info`,
+...) are available on the concrete type. `With` is the exception: it is
+overridden to return `Client` instead of the embedded `*slog.Logger`.
 
 ## Configuration
 
