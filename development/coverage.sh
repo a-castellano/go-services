@@ -2,7 +2,7 @@
 
 # Coverage script for go-services project
 # This script generates code coverage reports for all packages in the project
-# Usage: ./scripts/coverage.sh [html]
+# Usage: ./development/coverage.sh [html]
 # If 'html' argument is provided, generates HTML coverage report
 
 # Create cover directory if it doesn't exist

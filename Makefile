@@ -71,7 +71,7 @@ msan: ## Run memory sanitizer
 
 # Generate global code coverage report in text format
 coverage: ## Generate global code coverage report
-	./scripts/coverage.sh;
+	./development/coverage.sh;
 
 # Generate global code coverage report in HTML format (requires cover/coverage.report from coverage target)
 coverhtml: ## Generate global code coverage report in HTML
