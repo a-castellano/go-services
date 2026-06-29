@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
+	rabbitmqconfig "github.com/a-castellano/go-types/types/rabbitmq"
 )
 
 // Global variables to store original environment variable values

@@ -11,7 +11,7 @@ package rabbitmq
 import (
 	"context"
 	"errors"
-	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
+	rabbitmqconfig "github.com/a-castellano/go-types/types/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"testing"
 	"time"

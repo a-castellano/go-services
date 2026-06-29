@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"os"
 
-	slogconfig "github.com/a-castellano/go-types/slog"
+	slogconfig "github.com/a-castellano/go-types/types/slog"
 )
 
 // Client, the interface contract

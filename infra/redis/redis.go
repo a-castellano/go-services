@@ -9,7 +9,7 @@ import (
 	"time"
 
 	logger "github.com/a-castellano/go-services/infra/logger"
-	redisconfig "github.com/a-castellano/go-types/redis"
+	redisconfig "github.com/a-castellano/go-types/types/redis"
 	goredis "github.com/redis/go-redis/v9"
 )
 
