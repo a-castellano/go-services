@@ -33,6 +33,10 @@ test_rabbitmq: ## Run rabbitmq related tests
 test_rabbitmq_unit: ## Run rabbitmq unit tests
 	@go test --tags=rabbitmq_unit_tests -short ./...
 
+# Run only opentelemetry unit tests
+test_opentelemetry_unit: ## Run rabbitmq unit tests
+	@go test --tags=opentelemetry_unit_tests -short ./...
+
 # Run only messagebroker unit tests
 test_messagebroker_unit: ## Run messagebroker unit tests
 	@go test --tags=messagebroker_unit_tests -short ./...
