@@ -33,14 +33,14 @@ check whether telemetry is active.
 
 `SetupOpenTelemetry` builds, in the enabled path:
 
-1. A `Resource` whose `service.name` is taken from `APP_NAME` (the same variable
-   the logger uses for its `app` attribute), via `semconv.ServiceName`. This is
-   what labels each service in a distributed trace, so it must be distinct per
-   service and stable across runs.
-2. A `TracerProvider` with a batch span processor exporting to stdout
+1. A **`Resource`** whose `service.name` is taken from `APP_NAME` (the same
+   variable the logger uses for its `app` attribute), via `semconv.ServiceName`.
+   This is what labels each service in a distributed trace, so it must be
+   distinct per service and stable across runs.
+2. A **`TracerProvider`** with a batch span processor exporting to stdout
    (`stdouttrace`, pretty-printed).
-3. A composite W3C propagator (`TraceContext` + `Baggage`), set as the global
-   `TextMapPropagator`. `TraceContext` carries the trace identity across
+3. A composite **W3C propagator** (`TraceContext` + `Baggage`), set as the global
+   `TextMapPropagator`. `TraceContext` carries the **trace identity** across
    processes; `Baggage` carries cross-cutting key-values. Registering it is
    mandatory: a missing propagator does not error, it silently makes inject and
    extract no-ops, which would later disconnect cross-service traces.
@@ -48,9 +48,9 @@ check whether telemetry is active.
 It returns a `shutdown` that flushes and closes the provider. Two guarantees
 make it uniform to call from `main`:
 
-- Disabled (`Enabled == false`): the SDK is not wired and a no-op `shutdown` is
-  returned. `main` always calls and `defer`s the same way.
-- Enabled but init fails: a no-op `shutdown` is returned together with the
+- **Disabled** (`Enabled == false`): the SDK is not wired and a no-op `shutdown`
+  is returned. `main` always calls and `defer`s the same way.
+- **Enabled but init fails**: a no-op `shutdown` is returned together with the
   error, so the application can log it and keep running rather than aborting
   over an observability failure.
 
@@ -133,10 +133,10 @@ library via `opentelemetryconfig.NewConfig()` (package
 `github.com/a-castellano/go-types/types/opentelemetry`), which reads:
 
 - `APP_NAME` — application name, used as the telemetry `service.name`. Required,
-  no default. It is the single source of the service name, shared with the
+  no default. It is the **single source** of the service name, shared with the
   logger so logs and traces never diverge.
 - `ENABLE_TELEMETRY` — whether telemetry is active: `true` or `false`. Optional;
-  when unset it defaults to `false` (telemetry is opt-in).
+  when unset it defaults to `false` (telemetry is **opt-in**).
 
 Two standard variables are deliberately rejected by `NewConfig()`:
 
