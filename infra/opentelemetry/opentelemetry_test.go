@@ -24,6 +24,11 @@ func TestTelemetryDisabled(t *testing.T) {
 	if err != nil {
 		t.Errorf("TestTelemetryDisabled should not fail, error was '%s'.", err.Error())
 	} else {
+
+		if shutdown == nil {
+			t.Errorf("TestTelemetryDisabled shutdown function should not be nil as telemetry is disabled")
+		}
+
 		shutdownReturn := shutdown(ctx)
 		if shutdownReturn != nil {
 			t.Errorf("TestTelemetryDisabled shutdown should be nil as telemetry is disabled")
