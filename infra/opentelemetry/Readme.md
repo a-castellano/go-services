@@ -13,22 +13,6 @@ to a type from this package.
 > log correlation, OTLP export and cross-service propagation are built on top of
 > this same startup seam later, without changing how applications call it.
 
-## Why no `Client` interface
-
-The logger exposes a `Client` because business code calls it on every log line
-and the logger travels in the `context`. Telemetry is different: OpenTelemetry
-**splits the API from the SDK** — the API is what you instrument with, the SDK is
-configured once at startup. Instrumented code never holds an SDK object; it calls
-the global `otel.Tracer(...)`, whose provider this package registers at startup.
-The only behaviour that outlives initialization is shutdown, so the package
-surface is a single constructor returning a `shutdown func(context.Context) error`.
-
-This mirrors the logger's non-nil guarantee, but for free: if the SDK is never
-registered, OpenTelemetry's default global providers and propagator are **no-ops**.
-A span started with telemetry off (`otel.Tracer(...).Start`, `span.End()`,
-`trace.SpanFromContext`) runs harmlessly and never panics, so no service has to
-check whether telemetry is active.
-
 ## Behaviour
 
 `SetupOpenTelemetry` builds, in the enabled path:
