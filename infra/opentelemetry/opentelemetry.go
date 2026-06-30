@@ -21,22 +21,23 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
-func newTracerProvider(config *opentelemetryconfig.Config) (*trace.TracerProvider, error) {
-	resourceAtributes := resource.NewWithAttributes(
+// newTracerProvider builds a TracerProvider whose Resource carries the
+// service.name taken from config.AppName, registering the given span
+// processors. Taking the processors as a parameter is the seam that lets a
+// test inject an in-memory recorder (tracetest) instead of the stdout
+// exporter the production path uses.
+func newTracerProvider(config *opentelemetryconfig.Config, processors ...trace.SpanProcessor) *trace.TracerProvider {
+	resourceAttributes := resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String(config.AppName),
 	)
 
-	traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
-	if err != nil {
-		return nil, err
+	opts := []trace.TracerProviderOption{trace.WithResource(resourceAttributes)}
+	for _, processor := range processors {
+		opts = append(opts, trace.WithSpanProcessor(processor))
 	}
 
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithBatcher(traceExporter),
-		trace.WithResource(resourceAtributes),
-	)
-	return tracerProvider, nil
+	return trace.NewTracerProvider(opts...)
 }
 
 func SetupOpenTelemetry(ctx context.Context, config *opentelemetryconfig.Config) (func(context.Context) error, error) {
@@ -61,12 +62,16 @@ func SetupOpenTelemetry(ctx context.Context, config *opentelemetryconfig.Config)
 	// Set up propagator.
 	prop := newPropagator()
 	otel.SetTextMapPropagator(prop)
-	// Set up trace provider.
-	// Set up trace provider.
-	tracerProvider, err := newTracerProvider(config)
+
+	// Set up trace provider. The stdout exporter is the part that can fail, so
+	// it is built here; on failure we return the no-op shutdown plus the error
+	// so main can log it and keep running.
+	traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
 		return shutdown, err
 	}
+	tracerProvider := newTracerProvider(config, trace.NewBatchSpanProcessor(traceExporter))
+
 	shutdownFuncs = append(shutdownFuncs, tracerProvider.Shutdown)
 	otel.SetTracerProvider(tracerProvider)
 
