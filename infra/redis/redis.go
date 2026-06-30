@@ -128,14 +128,29 @@ func (client *RedisClient) WriteString(ctx context.Context, key string, value st
 // Returns the value, a boolean indicating if the key was found, and any error.
 // If the key doesn't exist, the boolean will be false and the string will be empty.
 func (client *RedisClient) ReadString(ctx context.Context, key string) (string, bool, error) {
-	var found bool = true
-	var emptyValue string = ""
+	var found = true
+	var emptyValue = ""
+
+	ctx, span := otel.Tracer("github.com/a-castellano/go-services/infra/redis").Start(ctx, "ReadString")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("db.system", "redis"),
+		attribute.String("operation", "Get"),
+	)
+
 	log := logger.FromContext(ctx).With("operation", "ReadString")
 	log.DebugContext(ctx, "checking if Redis client is initiated")
 
-	if client.clientInitiated == false {
-		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform ReadString operation")
-		return emptyValue, found, errors.New("redis client is not initiated, cannot perform ReadString operation")
+	if !client.clientInitiated {
+		errorString := "redis client is not initiated, cannot perform ReadString operation"
+		errorEmptyValue := errors.New(errorString)
+		log.ErrorContext(ctx, errorString)
+
+		span.RecordError(errorEmptyValue)
+		span.SetStatus(codes.Error, errorString)
+
+		return emptyValue, found, errorEmptyValue
 	}
 
 	log.DebugContext(ctx, "reading from Redis", "key", key)
@@ -144,14 +159,21 @@ func (client *RedisClient) ReadString(ctx context.Context, key string) (string, 
 		found = false
 		if err == goredis.Nil {
 			// Key doesn't exist in Redis
-			log.DebugContext(ctx, "Redis key is not set", "key", key)
+			emptyStatusMessage := "redis key is not set"
+			log.DebugContext(ctx, emptyStatusMessage, "key", key)
+			span.SetAttributes(attribute.Bool("db.redis.found", false))
 			return emptyValue, found, nil
 		} else {
 			// Other error occurred
-			log.ErrorContext(ctx, "cannot perform read operation from Redis", "error", err.Error())
+			cannotReadMessage := "cannot perform read operation from Redis"
+			span.RecordError(err)
+			span.SetStatus(codes.Error, cannotReadMessage)
+
+			log.ErrorContext(ctx, cannotReadMessage, "error", err.Error())
 			return emptyValue, found, err
 		}
 	}
 	log.DebugContext(ctx, "Redis key found", "key", key, "value", readValue)
+	span.SetAttributes(attribute.Bool("db.redis.found", true))
 	return readValue, found, nil
 }
