@@ -11,6 +11,9 @@ import (
 	logger "github.com/a-castellano/go-services/infra/logger"
 	redisconfig "github.com/a-castellano/go-types/types/redis"
 	goredis "github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // RedisClient implements the Client interface for Redis database operations.
@@ -89,15 +92,36 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 // Returns an error if the operation fails or if the client is not initialized.
 func (client *RedisClient) WriteString(ctx context.Context, key string, value string, ttl int) error {
 
+	// Start span
+	ctx, span := otel.Tracer("github.com/a-castellano/go-services/infra/redis").Start(ctx, "WriteString")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("db.system", "redis"),
+		attribute.String("operation", "Set"),
+	)
+
 	log := logger.FromContext(ctx).With("operation", "WriteString")
 	log.DebugContext(ctx, "checking if Redis client is initiated")
-	if client.clientInitiated == false {
-		log.ErrorContext(ctx, "Redis client is not initiated, cannot perform WriteString operation")
-		return errors.New("redis client is not initiated, cannot perform WriteString operation")
+	if !client.clientInitiated {
+		errorString := "redis client is not initiated, cannot perform WriteString operation"
+		clientNotInitiatedError := errors.New(errorString)
+		log.ErrorContext(ctx, errorString)
+		span.RecordError(clientNotInitiatedError)
+		span.SetStatus(codes.Error, errorString)
+		return clientNotInitiatedError
 	}
 	log.DebugContext(ctx, "writing value to Redis", "key", key, "value", value)
 	status := client.client.Set(ctx, key, value, time.Duration(ttl)*time.Second)
-	return status.Err()
+
+	if statusError := status.Err(); statusError != nil {
+		span.RecordError(statusError)
+		span.SetStatus(codes.Error, statusError.Error())
+
+		return statusError
+	}
+
+	return nil
 }
 
 // ReadString retrieves a string value from Redis by key.
