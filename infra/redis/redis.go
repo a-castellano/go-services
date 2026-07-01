@@ -24,6 +24,10 @@ type RedisClient struct {
 	clientInitiated bool                // Flag indicating if the client has been successfully initialized
 }
 
+const tracerName = "github.com/a-castellano/go-services/infra/redis"
+const dbSystem = "db.system"
+const dbSystemValue = "redis"
+
 // NewRedisClient creates a new RedisClient instance with the provided configuration.
 // The client is not automatically initialized - call Initiate() to establish the connection.
 func NewRedisClient(redisConfig *redisconfig.Config) RedisClient {
@@ -44,11 +48,11 @@ func (client *RedisClient) IsClientInitiated() bool {
 func (client *RedisClient) Initiate(ctx context.Context) error {
 
 	// Start span
-	ctx, span := otel.Tracer("github.com/a-castellano/go-services/infra/redis").Start(ctx, "Initiate")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "Initiate")
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("db.system", "redis"),
+		attribute.String(dbSystem, dbSystemValue),
 		attribute.String("operation", "PING"),
 	)
 
@@ -110,11 +114,11 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 func (client *RedisClient) WriteString(ctx context.Context, key string, value string, ttl int) error {
 
 	// Start span
-	ctx, span := otel.Tracer("github.com/a-castellano/go-services/infra/redis").Start(ctx, "WriteString")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "WriteString")
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("db.system", "redis"),
+		attribute.String(dbSystem, dbSystemValue),
 		attribute.String("operation", "Set"),
 	)
 
@@ -148,11 +152,11 @@ func (client *RedisClient) ReadString(ctx context.Context, key string) (string, 
 	var found = true
 	var emptyValue = ""
 
-	ctx, span := otel.Tracer("github.com/a-castellano/go-services/infra/redis").Start(ctx, "ReadString")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "ReadString")
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("db.system", "redis"),
+		attribute.String(dbSystem, dbSystemValue),
 		attribute.String("operation", "Get"),
 	)
 

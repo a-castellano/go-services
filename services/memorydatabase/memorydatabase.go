@@ -11,6 +11,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
+const tracerName = "github.com/a-castellano/go-services/services/memorydatabase"
+
 // Client interface defines the contract for memory database operations.
 // Implementations must provide methods for reading and writing string values,
 // as well as checking if the client has been properly initialized.
@@ -47,7 +49,7 @@ func NewMemoryDatabase(client Client) MemoryDatabase {
 func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key string, value string, ttl int) error {
 
 	// Start span
-	ctx, span := otel.Tracer("github.com/a-castellano/go-services/services/memorydatabase").Start(ctx, "WriteString")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "WriteString")
 	defer span.End()
 
 	span.SetAttributes(
@@ -85,7 +87,7 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, bool, error) {
 
 	// Start span
-	ctx, span := otel.Tracer("github.com/a-castellano/go-services/services/memorydatabase").Start(ctx, "ReadString")
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "ReadString")
 	defer span.End()
 
 	span.SetAttributes(
