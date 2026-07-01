@@ -59,7 +59,14 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 
 	if memorydatabase.client.IsClientInitiated() {
 		log.DebugContext(ctx, "writing into memorydatabase", "key", key, "value", value)
-		return memorydatabase.client.WriteString(ctx, key, value, ttl)
+
+		err := memorydatabase.client.WriteString(ctx, key, value, ttl)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		return err
 	} else {
 		errorString := "memorydatabase client is not initiated, cannot perform WriteString operation"
 		errNotInitiated := errors.New(errorString)
@@ -78,7 +85,7 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, bool, error) {
 
 	// Start span
-	ctx, span := otel.Tracer("github.com/a-castellano/go-services/services/memorydatabase").Start(ctx, "WriteString")
+	ctx, span := otel.Tracer("github.com/a-castellano/go-services/services/memorydatabase").Start(ctx, "ReadString")
 	defer span.End()
 
 	span.SetAttributes(
