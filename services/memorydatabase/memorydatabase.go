@@ -6,6 +6,9 @@ import (
 	"context"
 	"errors"
 	logger "github.com/a-castellano/go-services/infra/logger"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // Client interface defines the contract for memory database operations.
@@ -42,6 +45,15 @@ func NewMemoryDatabase(client Client) MemoryDatabase {
 // This is a wrapper method that checks if the client is initialized before performing the operation.
 // Returns an error if the client is not initialized or if the write operation fails.
 func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key string, value string, ttl int) error {
+
+	// Start span
+	ctx, span := otel.Tracer("github.com/a-castellano/go-services/services/memorydatabase").Start(ctx, "WriteString")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("key", key),
+	)
+
 	log := logger.FromContext(ctx).With("operation", "WriteString")
 	log.DebugContext(ctx, "checking if memorydatabase client is initiated")
 
@@ -49,8 +61,13 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 		log.DebugContext(ctx, "writing into memorydatabase", "key", key, "value", value)
 		return memorydatabase.client.WriteString(ctx, key, value, ttl)
 	} else {
-		log.ErrorContext(ctx, "memorydatabase client is not initiated, cannot perform WriteString operation")
-		return errors.New("MemoryDatabase client is not initiated, cannot perform WriteString operation")
+		errorString := "memorydatabase client is not initiated, cannot perform WriteString operation"
+		errNotInitiated := errors.New(errorString)
+		span.RecordError(errNotInitiated)
+		span.SetStatus(codes.Error, errorString)
+
+		log.ErrorContext(ctx, errorString)
+		return errNotInitiated
 	}
 }
 
