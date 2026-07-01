@@ -90,7 +90,15 @@ func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string
 
 	if memorydatabase.client.IsClientInitiated() {
 		log.DebugContext(ctx, "reading from memorydatabase", "key", key)
-		return memorydatabase.client.ReadString(ctx, key)
+		value, found, err := memorydatabase.client.ReadString(ctx, key)
+
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+
+		return value, found, err
+
 	} else {
 		errorString := "memorydatabase client is not initiated, cannot perform ReadString operation"
 		errNotInitiated := errors.New(errorString)
