@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	redisconfig "github.com/a-castellano/go-types/redis"
+	redisconfig "github.com/a-castellano/go-types/types/redis"
 )
 
 // TestRedisClientInvalidPort tests Redis client initialization with an invalid port.
