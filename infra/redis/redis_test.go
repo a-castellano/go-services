@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	redisconfig "github.com/a-castellano/go-types/redis"
+	redisconfig "github.com/a-castellano/go-types/types/redis"
 	redismock "github.com/go-redis/redismock/v9"
 )
 

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	slogconfig "github.com/a-castellano/go-types/slog"
+	slogconfig "github.com/a-castellano/go-types/types/slog"
 )
 
 // TestLogSomething checks that a plain-text logger writes a record to the

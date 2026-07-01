@@ -5,7 +5,7 @@ import (
 	"context"
 
 	logger "github.com/a-castellano/go-services/infra/logger"
-	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
+	rabbitmqconfig "github.com/a-castellano/go-types/types/rabbitmq"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

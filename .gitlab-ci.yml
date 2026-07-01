@@ -142,6 +142,22 @@ logger_unit_tests:
   script:
     - make test_logger_unit
 
+opentelemetry_unit_tests:
+  stage: unit_tests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*opentelemetry.*$/'
+    - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  before_script:
+    - export CC=/usr/bin/clang
+    - *install_mod
+  script:
+    - make test_opentelemetry_unit
+
+
 coverage:
   stage: coverage
   rules:
@@ -201,7 +217,7 @@ sonarqube-check:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
     GIT_DEPTH: "0" # Tells git to fetch all the branches of the project, required by the analysis task
   script:
-    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+    - sonar-scanner -Dproject.settings=development/sonar-project.properties -Dsonar.host.url="${SONAR_HOST_URL}"
   allow_failure: true
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'

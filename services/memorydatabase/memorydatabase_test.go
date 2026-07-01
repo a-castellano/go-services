@@ -69,7 +69,7 @@ func TestWriteStringWithoutInitiateClient(t *testing.T) {
 	memoryDatabase := MemoryDatabase{client: &client}
 	err := memoryDatabase.WriteString(ctx, "anykey", "anyvalue", 0)
 
-	required_error := "MemoryDatabase client is not initiated, cannot perform WriteString operation"
+	required_error := "memorydatabase client is not initiated, cannot perform WriteString operation"
 
 	if err == nil {
 		t.Errorf("memoryDatabase.WriteString with non initiated client should fail.")
@@ -124,7 +124,7 @@ func TestReadStringWithoutInitiateClient(t *testing.T) {
 
 	_, _, err := memoryDatabase.ReadString(ctx, "anykey")
 
-	required_error := "MemoryDatabase client is not initiated, cannot perform ReadString operation"
+	required_error := "memorydatabase client is not initiated, cannot perform ReadString operation"
 
 	if err == nil {
 		t.Errorf("memoryDatabase.ReadString without being initiated should fail.")
