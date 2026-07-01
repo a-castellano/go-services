@@ -43,6 +43,15 @@ func (client *RedisClient) IsClientInitiated() bool {
 // It handles both IP addresses and domain names for the Redis host.
 func (client *RedisClient) Initiate(ctx context.Context) error {
 
+	// Start span
+	ctx, span := otel.Tracer("github.com/a-castellano/go-services/infra/redis").Start(ctx, "Initiate")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("db.system", "redis"),
+		attribute.String("operation", "PING"),
+	)
+
 	log := logger.FromContext(ctx).With("operation", "Initiate")
 	log.DebugContext(ctx, "initiating Redis connection", "redisConfig", client.config)
 	var actualHost string
@@ -55,7 +64,10 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 		log.DebugContext(ctx, "Redis host is a domain name, resolving it to an IP address", "clientHost", client.config.Host)
 		ips, lookupErr := net.LookupIP(client.config.Host)
 		if lookupErr != nil {
-			log.ErrorContext(ctx, "cannot lookup Redis host domain name", "clientHost", client.config.Host, "errorMessage", lookupErr.Error())
+			errorString := "cannot lookup Redis host domain name"
+			span.RecordError(lookupErr)
+			span.SetStatus(codes.Error, errorString)
+			log.ErrorContext(ctx, errorString, "clientHost", client.config.Host, "errorMessage", lookupErr.Error())
 			return lookupErr
 		}
 		actualHost = fmt.Sprintf("%s", ips[0])
@@ -77,7 +89,12 @@ func (client *RedisClient) Initiate(ctx context.Context) error {
 	// Test the connection with a ping
 	_, pingErr := client.client.Ping(ctx).Result()
 	if pingErr != nil {
-		log.ErrorContext(ctx, "Redis ping failed, cannot validate connection", "errorMessage", pingErr.Error())
+		errorString := "Redis ping failed, cannot validate connection"
+
+		span.RecordError(pingErr)
+		span.SetStatus(codes.Error, errorString)
+
+		log.ErrorContext(ctx, errorString, "errorMessage", pingErr.Error())
 		return pingErr
 	}
 
