@@ -76,6 +76,15 @@ func (memorydatabase *MemoryDatabase) WriteString(ctx context.Context, key strin
 // Returns the value, a boolean indicating if the key was found, and any error.
 // Returns an error if the client is not initialized.
 func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string) (string, bool, error) {
+
+	// Start span
+	ctx, span := otel.Tracer("github.com/a-castellano/go-services/services/memorydatabase").Start(ctx, "WriteString")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("key", key),
+	)
+
 	log := logger.FromContext(ctx).With("operation", "ReadString")
 	log.DebugContext(ctx, "checking if memorydatabase client is initiated")
 
@@ -83,7 +92,12 @@ func (memorydatabase *MemoryDatabase) ReadString(ctx context.Context, key string
 		log.DebugContext(ctx, "reading from memorydatabase", "key", key)
 		return memorydatabase.client.ReadString(ctx, key)
 	} else {
-		log.ErrorContext(ctx, "memorydatabase client is not initiated, cannot perform ReadString operation")
-		return "", false, errors.New("MemoryDatabase client is not initiated, cannot perform ReadString operation")
+		errorString := "memorydatabase client is not initiated, cannot perform ReadString operation"
+		errNotInitiated := errors.New(errorString)
+		span.RecordError(errNotInitiated)
+		span.SetStatus(codes.Error, errorString)
+
+		log.ErrorContext(ctx, errorString)
+		return "", false, errNotInitiated
 	}
 }
